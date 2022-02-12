@@ -863,7 +863,7 @@ namespace linerider.UI
 
             ComboBox scarfCombobox = GwenHelper.CreateLabeledCombobox(scarfSettingPanel, "Selected Scarf:");
             scarfCombobox.AddItem("Default", "*default*", "*default*");
-            string[] scarfPaths = Directory.GetFiles(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\LRA\\Scarves");
+            string[] scarfPaths = Directory.GetFiles(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "/Documents/LRA/Scarves");
             for (int i = 0; i < scarfPaths.Length; i++)
             {
                 string scarfNames = Path.GetFileName(scarfPaths[i]);
@@ -925,7 +925,7 @@ namespace linerider.UI
             boshSkinCombobox.AddItem("Default", "*default*", "*default*");
 
 
-            string[] riderPaths = Directory.GetDirectories(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "/LRA/Riders");
+            string[] riderPaths = Directory.GetDirectories(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "/Documents/LRA/Riders");
             for (int i = 0; i < riderPaths.Length; i++)
             {
                 String riderNames = Path.GetFileName(riderPaths[i]);
