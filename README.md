@@ -10,6 +10,7 @@ You can download the latest version from https://github.com/RatherBeLunar/LRA-Co
 If you can't run the application, you probably need to install [.net 4.6](https://www.microsoft.com/en-us/download/details.aspx?id=48130) which is a requirement for running LRA.
 ## Mac/Linux
 You will need the [mono framework](http://www.mono-project.com/download/stable/) installed in order to run LRA:CE.
+Clone from the `linux` branch.
 
 # LRA:CE Features
 * Discord activity support (Aka little stats when you click your user)
