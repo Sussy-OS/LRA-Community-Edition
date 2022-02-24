@@ -28,7 +28,8 @@ We are tracking issues on https://trello.com/b/0RGXoFZQ/lra-community-edition. I
 First extract the source code and download [gwen-lra](https://github.com/jealouscloud/gwen-lra)'s source code and extract it to the /lib/gwen-lra/ folder
 Run nuget restore in src (Visual Studio (not VS Code) will do this for you)
 Build src/linerider.sln with msbuild or Visual Studio
-Download Discord's Game SDK at [https://dl-game-sdk.discordapp.net/latest/discord_game_sdk.zip](https://dl-game-sdk.discordapp.net/latest/discord_game_sdk.zip) and copy /lib/x86/discord_game_sdk.dll to the build directory. (If that doesn't work for some reason try x86_64)
+
+**Done**
 
 This project requires .net 4.6 and C# 7 support.
 
