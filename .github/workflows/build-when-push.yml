@@ -2,7 +2,7 @@ name: Build When Push
 on: [push]
 jobs:
   Build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
