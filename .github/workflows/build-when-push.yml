@@ -1,5 +1,5 @@
 name: Build When Push
-on: [push]
+on: [push, pull_request]
 jobs:
   Build:
     runs-on: windows-latest
