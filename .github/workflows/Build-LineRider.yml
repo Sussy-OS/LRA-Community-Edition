@@ -39,9 +39,10 @@ jobs:
       with:
         name: LineRider
         path: build/
+        
     - uses: actions/download-artifact@v3
       with:
-        name: my-artifact
+        name: LineRider
     
     - name: Display structure of downloaded files
       run: ls -R
