@@ -10,15 +10,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         
-      - uses: actions/download-artifact@v3
+      - name: download workflow artifact
+        uses: benday-inc/download-latest-artifact@main
         with:
-          name: LineRider
-          path: linerider.zip
+          token: ${{ secrets.PERSONAL_TOKEN }}'
+          repository_owner: 'Sussy-OS'
+          repository_name: 'LRA-Community-Edition'
+          workflow_name: 'Build LineRider'
+          branch_name: 'linux'
+          artifact_name: 'LineRider'
+          download_path: '${{ github.workspace }}'
+          download_filename: 'linerider.zip'
           
       - name: Upload to release
         run: |
           VERSION="$(($(wget -qO- https://github.com/Sussy-OS/LRA-Community-Edition/releases/latest  | grep -m 1 -o "LineRider game auto-release.*"  | sed 's/LineRider game auto-release //g; s/ ·.*//g; s/.0//g') + 1))"
           gh release create ${VERSION}.0 --notes "Get it on Pi-Apps!" -t "LineRider game auto-release ${VERSION}.0"
-          gh release upload linerider.zip
+          gh release upload ./*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
