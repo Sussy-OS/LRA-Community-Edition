@@ -4,7 +4,6 @@ This is source code for Pi-Apps, to install on Linux, either build it yourself, 
 
 [![badge](https://github.com/Botspot/pi-apps/blob/master/icons/badge.png?raw=true)](https://github.com/Botspot/pi-apps)  
 
-
 # About Line Rider Advanced: Community Edition
 Line Rider Advanced: Community Edition, abbreviated as LRA:CE, is a fork of https://github.com/jealouscloud/linerider-advanced; "An open source spiritual successor to the flash game Line Rider 6.2 with lots of new features."
 
