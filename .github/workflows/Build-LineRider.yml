@@ -40,10 +40,11 @@ jobs:
       with:
         name: LineRider
         path: build/
-
+        
     - uses: actions/download-artifact@v3
       with:
         name: LineRider
+        path: linerider.zip
         
   release:
     name: Create Release
@@ -51,15 +52,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+      - name: Upload to release
+        run: |
+          VERSION="$(($(wget -qO- https://github.com/Sussy-OS/LRA-Community-Edition/releases/latest  | grep -m 1 -o "LineRider game auto-release.*"  | sed 's/LineRider game auto-release //g; s/ ·.*//g; s/.0//g') + 1))"
+          gh release create ${VERSION}.0 --notes "Get it on Pi-Apps!" -t "LineRider game auto-release ${VERSION}.0"
+          gh release upload linerider.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            This is an auto-release
-          draft: false
-          prerelease: false
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
