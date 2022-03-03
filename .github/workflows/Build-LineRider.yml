@@ -39,3 +39,13 @@ jobs:
       with:
         name: LineRider
         path: build/
+        
+    - uses: actions/download-artifact@v3
+      with:
+        name: LineRider
+      
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: LineRider.zip
