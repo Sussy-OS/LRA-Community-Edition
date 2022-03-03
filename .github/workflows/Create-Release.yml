@@ -13,7 +13,7 @@ jobs:
       - name: download workflow artifact
         uses: benday-inc/download-latest-artifact@main
         with:
-          token: ${{ secrets.PERSONAL_TOKEN }}'
+          token: ${{ secrets.PERSONAL_TOKEN }}
           repository_owner: 'Sussy-OS'
           repository_name: 'LRA-Community-Edition'
           workflow_name: 'Build LineRider'
