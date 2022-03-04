@@ -42,7 +42,7 @@ jobs:
       
     - name: rename
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: rename LineRider.zip linerider.zip
+      run: ren LineRider.zip linerider.zip
       
     - uses: actions/upload-artifact@v3
       with:
