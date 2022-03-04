@@ -22,9 +22,14 @@ jobs:
           download_path: '${{ github.workspace }}'
           download_filename: 'linerider.zip'
           
-      - name: get tag
-        uses: little-core-labs/get-git-tag@v3.0.1
-        id: tagName
+      - id: get_version
+        name: Get version
+        uses: jannemattila/get-version-from-tag@v1
+
+      - name: Display version
+        run: |
+          VERSION=$(echo "${{ steps.get_version.outputs.version }} + 1")
+          echo $VERSION
           
       - name: Create release
         id: create_release
@@ -32,8 +37,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag_name: "${{ steps.tagName.outputs.tag }} + 1"
-          release_name: Release ${GIT_TAG_NAME} + 1
+          tag_name: $VERSION
+          release_name: Release $VERSION
           body: |
             LineRider auto-release
           draft: false
