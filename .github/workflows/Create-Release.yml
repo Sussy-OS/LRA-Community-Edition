@@ -22,12 +22,12 @@ jobs:
           download_path: '${{ github.workspace }}'
           download_filename: 'linerider.zip'
           
-      - id: next_version
-        uses: zwaldowski/semver-release-action@v1
+      - name: Get next version
+        uses: reecetech/version-increment@2022.2.5
+        id: version
         with:
-          dry_run: true
-          bump: patch
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          scheme: semver
+          increment: patch
           
       - name: Create release
         id: create_release
@@ -35,8 +35,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag_name: ${{ steps.next-version.outputs.version }}
-          release_name: LineRider game auto-release ${{ steps.next-version.outputs.version }}
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: LineRider game auto-release ${{ steps.version.outputs.version }}
           body: |
             LineRider auto-release. Get it on Pi-Apps!
             ${{ steps.versioning.outputs.changelog }}
