@@ -25,7 +25,7 @@ jobs:
           
       - name: Set var
         run: |
-          VERSION="$(($(wget -qO- https://github.com/Sussy-OS/LRA-Community-Edition/releases/latest  | grep -m 1 -o "LineRider game auto-release.*"  | sed 's/LineRider game auto-release //g; s/ ·.*//g; s/.0//g') + 1))"
+          VERSION="$(($(wget -qO- https://github.com/Sussy-OS/LRA-Community-Edition/releases/latest  | grep -m 1 -o "LineRider game auto-release.*"  | sed 's/LineRider game auto-release //g; s/ ·.*//g; s/.0//g') + 1))" >> $GITHUB_ENV
           
       - name: Create release
         id: create_release
