@@ -46,4 +46,4 @@ jobs:
       - uses: planet-code/upload-to-release-action@1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          asset-path: "*.zip"
+          asset-path: "linerider.zip"
