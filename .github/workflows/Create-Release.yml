@@ -47,3 +47,4 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           asset-path: "linerider.zip"
+          asset-name: "LR.zip"
