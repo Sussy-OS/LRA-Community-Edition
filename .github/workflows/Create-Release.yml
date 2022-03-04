@@ -43,7 +43,7 @@ jobs:
           draft: false
           prerelease: false
           
-      - uses: AButler/upload-release-assets@v2.0
+      - uses: planet-code/upload-to-release-action@1.0.0
         with:
-          files: 'linerider.zip'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          asset-path: "*.zip"
