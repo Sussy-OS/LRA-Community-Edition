@@ -22,7 +22,7 @@ jobs:
           download_path: '${{ github.workspace }}'
           download_filename: 'linerider.zip'
           
-      - uses: wemogy/next-version-action@1.0.2
+      - uses: wemogy/next-version-action@2.0.1
         id: release-version
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
