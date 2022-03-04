@@ -32,8 +32,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag_name: ${{ env.GIT_TAG_NAME }}.0
-          release_name: Release ${{ env.GIT_TAG_NAME }}.0
+          tag_name: "$GIT_TAG_NAME + 1"
+          release_name: Release "$GIT_TAG_NAME + 1"
           body: |
             LineRider auto-release
           draft: false
