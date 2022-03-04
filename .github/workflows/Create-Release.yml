@@ -22,9 +22,12 @@ jobs:
           download_path: '${{ github.workspace }}'
           download_filename: 'linerider.zip'
           
-      - name: Gen Versioning Data
-        id: versioning
-        uses: Soumeh/Auto-Versioning@main
+      - uses: wemogy/next-version-action@1.0.2
+        id: release-version
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          projects: 'Single'
+          prefix: ''
           
       - name: Create release
         id: create_release
@@ -32,8 +35,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag_name: ${{ steps.versioning.outputs.tag }}
-          release_name: LineRider game auto-release ${{ steps.versioning.outputs.tag }}
+          tag_name: ${{ steps.release-version.outputs.next-version }}
+          release_name: LineRider game auto-release ${{ steps.release-version.outputs.next-version }}
           body: |
             LineRider auto-release. Get it on Pi-Apps!
             ${{ steps.versioning.outputs.changelog }}
