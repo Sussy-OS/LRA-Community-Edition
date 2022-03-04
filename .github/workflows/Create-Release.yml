@@ -23,8 +23,9 @@ jobs:
           download_filename: 'linerider.zip'
           
       - name: Get next version
-        id: Version
-        uses: technote-space/get-next-version-action@v1
+        uses: SOLIDSoftworks/semver-tags@v1.0.4
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN}}
           
       - name: Create release
         id: create_release
