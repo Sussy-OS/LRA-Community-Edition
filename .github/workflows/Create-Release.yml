@@ -31,7 +31,10 @@ jobs:
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           with:
-            file: "linerider.zip"
+            file: "${{ github.workspace }}/linerider.zip"
             draft: false
+            branches: "linux"
+            verbose: true
+            
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
