@@ -18,7 +18,7 @@ jobs:
           repository_name: 'LRA-Community-Edition'
           workflow_name: 'Build LineRider'
           branch_name: 'linux'
-          artifact_name: 'LineRider'
+          artifact_name: 'linerider'
           download_path: '${{ github.workspace }}'
           download_filename: 'linerider.zip'
           
@@ -30,7 +30,7 @@ jobs:
           repository_name: 'LRA-Community-Edition'
           workflow_name: 'Build LineRider'
           branch_name: 'linux'
-          artifact_name: 'LineRider'
+          artifact_name: 'linerider'
           download_path: '${{ github.workspace }}'
           download_filename: 'linerider2.zip'
           
