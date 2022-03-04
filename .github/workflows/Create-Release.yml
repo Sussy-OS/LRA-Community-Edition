@@ -22,14 +22,18 @@ jobs:
           download_path: '${{ github.workspace }}'
           download_filename: 'linerider.zip'
           
+      - name: Get next version
+        id: Version
+        uses: technote-space/get-next-version-action@v1
+          
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag_name: $(($(wget -qO- https://github.com/Sussy-OS/LRA-Community-Edition/releases/latest  | grep -m 1 -o "LineRider game auto-release.*"  | sed 's/LineRider game auto-release //g; s/ ·.*//g; s/.0//g') + 1)).0
-          release_name: LineRider game auto-release "$(($(wget -qO- https://github.com/Sussy-OS/LRA-Community-Edition/releases/latest  | grep -m 1 -o "LineRider game auto-release.*"  | sed 's/LineRider game auto-release //g; s/ ·.*//g; s/.0//g') + 1))".0
+          tag_name: ${{steps.Version.outputs.next}}
+          release_name: LineRider game auto-release ${{steps.Version.outputs.next}}
           body: |
             LineRider auto-release. Get it on Pi-Apps!
           draft: false
