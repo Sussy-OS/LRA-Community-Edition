@@ -22,6 +22,18 @@ jobs:
           download_path: '${{ github.workspace }}'
           download_filename: 'linerider.zip'
           
+      - name: download workflow artifact2
+        uses: benday-inc/download-latest-artifact@main
+        with:
+          token: ${{ secrets.PERSONAL_TOKEN }}
+          repository_owner: 'Sussy-OS'
+          repository_name: 'LRA-Community-Edition'
+          workflow_name: 'Build LineRider'
+          branch_name: 'linux'
+          artifact_name: 'LineRider'
+          download_path: '${{ github.workspace }}'
+          download_filename: 'linerider2.zip'
+          
       - name: Upload to release
         run: |
           VERSION="$(($(wget -qO- https://github.com/Sussy-OS/LRA-Community-Edition/releases/latest  | grep -m 1 -o "LineRider game auto-release.*"  | sed 's/LineRider game auto-release //g; s/ ·.*//g; s/.0//g') + 1))"
