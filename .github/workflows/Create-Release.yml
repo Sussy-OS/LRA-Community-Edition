@@ -48,3 +48,4 @@ jobs:
           release_id: ${{ steps.create_release.outputs.id }}
           overwrite: true
           verbose: true
+          draft: false
