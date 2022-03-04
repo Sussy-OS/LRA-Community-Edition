@@ -45,5 +45,5 @@ jobs:
           
       - uses: AButler/upload-release-assets@v2.0
         with:
-          files: '*.zip'
+          files: 'linerider.zip'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
