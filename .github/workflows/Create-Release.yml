@@ -38,17 +38,12 @@ jobs:
           tag_name: ${{ steps.version.outputs.version }}
           release_name: LineRider game auto-release ${{ steps.version.outputs.version }}
           body: |
-            LineRider auto-release. Get it on Pi-Apps!
+            LineRider auto-release ${{ steps.version.outputs.version }}. Get it on Pi-Apps!
             ${{ steps.versioning.outputs.changelog }}
           draft: false
           prerelease: false
           
-      - uses: xresloader/upload-to-github-release@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: AButler/upload-release-assets@v2.0
         with:
-          file: "*.zip"
-          release_id: ${{ steps.create_release.outputs.id }}
-          overwrite: true
-          verbose: true
-          draft: false
+          files: '*.zip'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
