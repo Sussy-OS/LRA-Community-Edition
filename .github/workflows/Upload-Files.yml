@@ -1,0 +1,29 @@
+name: Upload Files
+
+on: workflow_dispatch
+
+jobs:
+  upload:
+    name: Upload Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        
+      - name: download workflow artifact
+        uses: benday-inc/download-latest-artifact@main
+        with:
+          token: ${{ secrets.PERSONAL_TOKEN }}
+          repository_owner: 'Sussy-OS'
+          repository_name: 'LRA-Community-Edition'
+          workflow_name: 'Build LineRider'
+          branch_name: 'linux'
+          artifact_name: 'linerider'
+          download_path: '${{ github.workspace }}'
+          download_filename: 'linerider.zip'
+          
+       - uses: planet-code/upload-to-release-action@1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          asset-path: "linerider.zip"
+          asset-name: "LR.zip"
