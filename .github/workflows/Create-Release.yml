@@ -14,7 +14,7 @@ jobs:
         uses: reecetech/version-increment@2022.2.5
         id: version
         with:
-          scheme: semver
+          scheme: calver
           increment: patch
           
       - name: Create release
