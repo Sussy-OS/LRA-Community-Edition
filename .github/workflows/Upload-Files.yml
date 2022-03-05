@@ -22,7 +22,7 @@ jobs:
           download_path: '${{ github.workspace }}'
           download_filename: 'linerider.zip'
           
-       - uses: planet-code/upload-to-release-action@1.0.0
+      - uses: planet-code/upload-to-release-action@1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           asset-path: "linerider.zip"
