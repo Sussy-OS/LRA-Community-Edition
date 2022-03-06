@@ -20,10 +20,10 @@ jobs:
           branch_name: 'linux'
           artifact_name: 'linerider'
           download_path: '${{ github.workspace }}'
-          download_filename: 'linerider.zip'
+          download_filename: 'linerider'
           
       - uses: planet-code/upload-to-release-action@1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          asset-path: "linerider.zip"
+          asset-path: "linerider"
           asset-name: "LR.zip"
