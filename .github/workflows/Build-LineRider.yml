@@ -38,7 +38,7 @@ jobs:
       
     - name: rename
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: ren Build\* linerider
+      run: ren Build linerider
       
     - uses: actions/upload-artifact@v3
       with:
