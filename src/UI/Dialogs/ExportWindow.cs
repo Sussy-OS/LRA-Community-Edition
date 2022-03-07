@@ -109,6 +109,10 @@ namespace linerider.UI
             
             table.Add("Quality", qualitycb);
 
+            var startOnCurrentFrameCheck = AddPropertyCheckbox(
+                table,
+                "Start on Current Frame",
+                false);
             var smoothcheck = AddPropertyCheckbox(
                 table,
                 "Smooth Playback",
@@ -175,7 +179,8 @@ namespace linerider.UI
                     Settings.Recording.EnableColorTriggers = colorTriggers.IsChecked;
                     Settings.Recording.ResIndZoom = resIndZoom.IsChecked;
                     Settings.Recording.ShowHitTest = hitTest.IsChecked;
-
+                    Settings.currentFrame = startOnCurrentFrameCheck.IsChecked;
+                    
                     Settings.RecordSmooth = smoothcheck.IsChecked;
                     if (!music.IsDisabled)
                     {
@@ -216,7 +221,8 @@ namespace linerider.UI
             IO.TrackRecorder.RecordTrack(
                 _game,
                 Settings.RecordSmooth,
-                Settings.RecordMusic && !Settings.MuteAudio);
+                Settings.RecordMusic && !Settings.MuteAudio,
+                Settings.currentFrame ? (Settings.RecordSmooth ? (int)(_game.Track.Offset * 1.5) : _game.Track.Offset) : 0);
         }
     }
 }
