@@ -17,11 +17,9 @@ jobs:
           scheme: calver
           increment: patch
           
-      - name: Create changelog text
+      - name: Make Changelog
         id: changelog
-        uses: loopwerk/tag-changelog@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+        uses: gandarez/changelog-action@v1.0.4   
           
       - name: Create release
         id: create_release
@@ -35,7 +33,8 @@ jobs:
             LineRider auto-release ${{ steps.version.outputs.version }}. Get it on Pi-Apps!
               Changelog:
               
-            ${{ steps.changelog.outputs.changes }}
+            ${{ steps.changelog.outputs.changelog }}
+            
           draft: false
           prerelease: false
           
