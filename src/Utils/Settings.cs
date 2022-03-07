@@ -167,6 +167,10 @@ namespace linerider
 
         //Malizma Addon Settings
         public static bool InvisibleRider;
+
+        // if true, recordings start on the frame that is currently being edited (_game.Track.offset from ExportWindow)
+        public static bool currentFrame;
+
         static Settings()
         {
             RestoreDefaultSettings();
