@@ -33,7 +33,7 @@ jobs:
           release_name: LineRider game auto-release ${{ steps.version.outputs.version }}
           body: |
             LineRider auto-release ${{ steps.version.outputs.version }}. Get it on Pi-Apps!
-              Changelog:
+              ## Changelog:
               
             ${{ steps.create-release-notes.outputs.release-notes }}
             
