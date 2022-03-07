@@ -149,7 +149,7 @@ namespace linerider.IO
             }
         }
 
-        public static void RecordTrack(MainWindow game, bool smooth, bool music)
+        public static void RecordTrack(MainWindow game, bool smooth, bool music, int startingFrame)
         {
             var flag = game.Track.GetFlag();
             if (flag == null) return;
@@ -211,6 +211,10 @@ namespace linerider.IO
                 {
                     _screenshotbuffer = new byte[game.RenderSize.Width * game.RenderSize.Height * 3];// 3 bytes per pixel
                     string errormessage = "An unknown error occured during recording.";
+                    if (frame <= startingFrame)
+                    {
+                        errormessage = "Starting frame was greater than or equal to the flag frame";
+                    }
                     game.Title = Program.WindowTitle + " [Recording | Hold ESC to cancel]";
                     game.ProcessEvents();
                     var filename = Program.UserDirectory + game.Track.Name + ".mp4";
@@ -231,10 +235,13 @@ namespace linerider.IO
 
                     double frametime = 0;
                     Stopwatch sw = Stopwatch.StartNew();
+                    var skipRender = true;
                     for (var i = 0; i < framecount; i++)
                     {
                         if (hardexit)
                             break;
+                        if (i >= startingFrame)
+                            skipRender = false;
                         if (smooth)
                         {
                             var oldspot = frametime;
@@ -252,13 +259,17 @@ namespace linerider.IO
                                 game.Track.Update(1);
                             }
                             var blend = frametime - Math.Truncate(frametime);
-                            game.Render((float)blend);
+                            if (!skipRender)
+                                game.Render((float)blend);
                         }
                         else
                         {
                             game.Track.Update(1);
-                            game.Render();
+                            if (!skipRender)
+                                game.Render();
                         }
+                        if (skipRender)
+                            continue;
                         try
                         {
                             var screenshot = GrabScreenshot(game, frontbuffer);
@@ -285,8 +296,10 @@ namespace linerider.IO
 
                     if (!hardexit)
                     {
+                        double skippedTime = startingFrame * (smooth ? 1.0 / 60 : 1.0 / 40);
                         var parameters = new FFMPEGParameters();
                         parameters.AddOption("framerate", smooth ? "60" : "40");
+                        parameters.AddOption("start_number", startingFrame.ToString());
                         parameters.AddOption("i", "\"" + dir + Path.DirectorySeparatorChar + "tmp%d.png" + "\"");
                         if (music && !string.IsNullOrEmpty(game.Track.Song.Location) && game.Track.Song.Enabled)
                         {
@@ -294,12 +307,12 @@ namespace linerider.IO
                                      Path.DirectorySeparatorChar +
                                      game.Track.Song.Location;
 
-                            parameters.AddOption("ss", game.Track.Song.Offset.ToString(Program.Culture));
+                            parameters.AddOption("ss", (game.Track.Song.Offset + skippedTime).ToString(Program.Culture));
                             parameters.AddOption("i", "\"" + fn + "\"");
                             parameters.AddOption("c:a", "aac");
                         }
                         double duration = framecount / (smooth ? 60.0 : 40.0);
-                        parameters.AddOption("t", duration.ToString(Program.Culture));
+                        parameters.AddOption("t", (duration - skippedTime).ToString(Program.Culture));
                         parameters.AddOption("vf", "vflip");//we save images upside down expecting ffmpeg to flip more efficiently.
                         // ffmpeg x264 encoding doc:
                         // https://trac.ffmpeg.org/wiki/Encode/H.264
