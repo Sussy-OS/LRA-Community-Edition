@@ -17,6 +17,12 @@ jobs:
           scheme: calver
           increment: patch
           
+      - name: Create changelog text
+        id: changelog
+        uses: loopwerk/tag-changelog@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
@@ -27,7 +33,9 @@ jobs:
           release_name: LineRider game auto-release ${{ steps.version.outputs.version }}
           body: |
             LineRider auto-release ${{ steps.version.outputs.version }}. Get it on Pi-Apps!
-            ${{ steps.versioning.outputs.changelog }}
+              Changelog:
+              
+            ${{ steps.changelog.outputs.changes }}
           draft: false
           prerelease: false
           
