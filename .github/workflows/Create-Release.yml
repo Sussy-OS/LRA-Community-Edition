@@ -16,10 +16,12 @@ jobs:
         with:
           scheme: calver
           increment: patch
-          
+        
       - name: Make Changelog
-        id: changelog
-        uses: gandarez/changelog-action@v1.0.4   
+        uses: johnyherangi/create-release-notes@main
+        id: create-release-notes
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
           
       - name: Create release
         id: create_release
@@ -33,7 +35,7 @@ jobs:
             LineRider auto-release ${{ steps.version.outputs.version }}. Get it on Pi-Apps!
               Changelog:
               
-            ${{ steps.changelog.outputs.changelog }}
+            ${{ steps.create-release-notes.outputs.release-notes }}
             
           draft: false
           prerelease: false
