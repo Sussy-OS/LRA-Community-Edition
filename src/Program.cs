@@ -196,7 +196,7 @@ namespace linerider
                     {
                         using (WebClient wc = new WebClient())
                         {
-                            string currentversion = wc.DownloadString("https://raw.githubusercontent.com/RatherBeLunar/LRA-Community-Edition/master/version");
+                            string currentversion = wc.DownloadString("https://raw.githubusercontent.com/Sussy-OS/LRA-Community-Edition/master/version");
                             var idx = currentversion.IndexOfAny(new char[] { '\r', '\n' });
                             if (idx != -1)
                             {

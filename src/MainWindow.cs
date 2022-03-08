@@ -484,7 +484,7 @@ namespace linerider
             String versionText = "LRA:CE version " + linerider.Program.Version;
 
             String largeKey = Settings.largeImageKey;
-            String largeText = versionText + " ==================== Source code: https://github.com/RatherBeLunar/LRA-Community-Edition";
+            String largeText = versionText + " ==================== Source code: https://github.com/Sussy-OS/LRA-Community-Edition";
             String smallKey = toolName;
             String smallText = "Currently using the " + toolName + " tool";
 
