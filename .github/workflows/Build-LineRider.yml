@@ -56,6 +56,16 @@ jobs:
     - name: Edit Version
       run: python3 ./EditVersion.py ${{ steps.version.outputs.version }}
     
+    - name: Commit, and Push
+      uses: github-actions-x/commit@v2.8
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        push-branch: 'linux'
+        commit-message: 'Update-Version'
+        force-add: 'true'
+        files: release
+        name: Sussy-OS 
+  
     - name: Invoke workflow without inputs
       uses: benc-uk/workflow-dispatch@v1
       with:
