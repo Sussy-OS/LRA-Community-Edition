@@ -8,10 +8,8 @@ with open('version', "w") as version:
     
     with open("src/UI/Dialogs/ChangelogWindow.cs", "r") as f:
         contents = f.readlines()
-        mySeparator = "TEST"
-        x = mySeparator.join(sys.argv[2])
 
-    contents.insert(24, x)
+    contents.insert(24, sys.argv[2])
 
     with open("src/UI/Dialogs/ChangelogWindow.cs", "w") as f:
         contents = "".join(contents)
