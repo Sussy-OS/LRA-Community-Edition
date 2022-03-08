@@ -19,6 +19,10 @@ namespace linerider.UI
             SetSize(1100, 380);
 
             var changelogText = "" +
+                    "================================================================================================================================\n" +
+                    "Linux Build Changelog\n" +
+                    "Nothing so far, just got the app auto-build working tho.\n" +
+                    "================================================================================================================================\n" +
                     "6/15/20 - Build 1\n" +
                     "* Crashes due to invalid settings files are now resolved (again because I did it wrong last update).\n" +
                     "* Default save format settings are now available for crash backups `Settings -> Other`.\n" +
