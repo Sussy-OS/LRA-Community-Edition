@@ -30,7 +30,6 @@ First extract the source code and download [gwen-lra](https://github.com/jealous
 Run nuget restore in src (Visual Studio (not VS Code) will do this for you)
 Build src/linerider.sln with msbuild or Visual Studio
 
-WOW! YOU DID IT! :D
 
 **Done**
 
