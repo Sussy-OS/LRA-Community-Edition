@@ -3,4 +3,4 @@
 import sys
 
 with open('version', "w") as version:
-    version.write('2022.3.10')
+    version.write(sys.argv[1])
