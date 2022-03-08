@@ -4,3 +4,13 @@ import sys
 
 with open('version', "w") as version:
     version.write(sys.argv[1])
+
+    
+    with open("src/UI/Dialogs/ChangelogWindow.cs", "r") as f:
+        contents = f.readlines()
+
+    contents.insert(24, sys.argv[1])
+
+    with open("src/UI/Dialogs/ChangelogWindow.cs", "w") as f:
+        contents = "".join(contents)
+        f.write(contents)
