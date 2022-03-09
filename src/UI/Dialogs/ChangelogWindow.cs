@@ -21,7 +21,7 @@ namespace linerider.UI
             var changelogText = "" +
                     "================================================================================================================================\n" +
                     "Linux Build Changelog\n" +
-                    "Nothing so far, just got the app auto-build working tho.\n" +
+                    "* Just finished adding the changelog, currently, all bugs are fixed.\n" +
                     "================================================================================================================================\n" +
                     "6/15/20 - Build 1\n" +
                     "* Crashes due to invalid settings files are now resolved (again because I did it wrong last update).\n" +
