@@ -21,6 +21,7 @@ namespace linerider.UI
             var changelogText = "" +
                     "================================================================================================================================\n" +
                     "Linux Build Changelog\n" +
+                    "* Added updater script for when Pi-Apps does not do it automatically.\n" +
                     "* Just finished adding the changelog, currently, all bugs are fixed.\n" +
                     "================================================================================================================================\n" +
                     "6/15/20 - Build 1\n" +
