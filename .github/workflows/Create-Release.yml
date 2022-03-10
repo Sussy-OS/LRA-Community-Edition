@@ -34,9 +34,6 @@ jobs:
           body: |
             LineRider auto-release ${{ steps.version.outputs.version }}. Get it on Pi-Apps!
 
-	    If you want to update LineRider, either wait for Pi-Apps to run it's updater, or run the command below:
-            ```rm -rf LineRider && mkdir LineRider && cd LineRider && wget -0 linerider.zip https://github.com/Sussy-OS/LRA-Community-Edition/releases/download/${{ steps.version.outputs.version }}/LineRider.game.auto-release.${{ steps.version.outputs.version }}-LR.zip && unzip linerider.zip && rm linerider.zip```
-
               ## Changelog:
               
             ${{ steps.create-release-notes.outputs.release-notes }}
