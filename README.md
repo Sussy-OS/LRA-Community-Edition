@@ -9,11 +9,10 @@ Line Rider Advanced: Community Edition, abbreviated as LRA:CE, is a fork of http
 
 This project's goal is to unify the best features from several existing forks of the original Line Rider Advanced all into one version. Once this version is caught up with all others, we, the contributors, will aim to continue development of new features in this repo as opposed to branching off into new forks again.
 
-## Windows
-If you can't run the application, you probably need to install [.net 4.6](https://www.microsoft.com/en-us/download/details.aspx?id=48130) which is a requirement for running LRA.
-## Mac/Linux
-You will need the [mono framework](http://www.mono-project.com/download/stable/) installed in order to run LRA:CE.
-Clone from the `linux` branch.
+## Linux
+You will need to run ```sudo apt install apt-transport-https dirmngr gnupg ffmpeg mono-devel -y``` or install it from Pi-Apps:
+[![badge](https://github.com/Botspot/pi-apps/blob/master/icons/badge.png?raw=true)](https://github.com/Botspot/pi-apps) 
+
 
 # LRA:CE Features
 * Discord activity support (Aka little stats when you click your user)
@@ -23,10 +22,12 @@ Clone from the `linux` branch.
 * Custom scarves on a rider png -> [/Examples/Riders/Bosh-Custom-Scarf-On-Png-Example/README.md](https://github.com/RatherBeLunar/LRA-Community-Edition/tree/master/Examples/Riders/Bosh-Custom-Scarf-On-Png-Example/README.md)
 
 # Issues
-We are tracking issues on https://trello.com/b/0RGXoFZQ/lra-community-edition. If the issue you wish to report isn't present there, please submit an issue here on Github, and we will add it to the Trello board.
+Please, if you have an issue, make an issue using the provided template.
+
+# Sugjestions
+If you think you know a way to make this better, let me know! Just fork this repo, edit it, and make a pull request.
 
 # Build
-First extract the source code and download [gwen-lra](https://github.com/jealouscloud/gwen-lra)'s source code and extract it to the /lib/gwen-lra/ folder
 Run nuget restore in src (Visual Studio (not VS Code) will do this for you)
 Build src/linerider.sln with msbuild or Visual Studio
 
