@@ -10,13 +10,13 @@ Line Rider Advanced: Community Edition, abbreviated as LRA:CE, is a fork of http
 This project's goal is to unify the best features from several existing forks of the original Line Rider Advanced all into one version. Once this version is caught up with all others, we, the contributors, will aim to continue development of new features in this repo as opposed to branching off into new forks again.
 
 ## Install & Uninstall
-You will need to run ```wget -qO- https://raw.githubusercontent.com/Sussy-OS/LRA-Communtiy-Edition/linux/install.sh | bash``` or install it from Pi-Apps:
+You will need to run ```wget -qO- https://raw.githubusercontent.com/Sussy-OS/LRA-Community-Edition/linux/install.sh | bash``` or install it from Pi-Apps:
 
 
 [![badge](https://github.com/Botspot/pi-apps/blob/master/icons/badge.png?raw=true)](https://github.com/Botspot/pi-apps) 
 
 
-To uninstall, run ```wget -qO- https://raw.githubusercontent.com/Sussy-OS/LRA-Communtiy-Edition/linux/uninstall.sh | bash```
+To uninstall, run ```wget -qO- https://raw.githubusercontent.com/Sussy-OS/LRA-Community-Edition/linux/uninstall.sh | bash```
 
 # LRA:CE Features
 * Discord activity support (Aka little stats when you click your user)
