@@ -3,16 +3,20 @@
 version=2022.3.18
 # Version
 
-sudo apt install apt-transport-https dirmngr gnupg ffmpeg mono-devel -y || exit 1
+# Copy the logo to temp
+wget -O /tmp/icon-64.png https://raw.githubusercontent.com/Sussy-OS/pi-apps/master/apps/LineRider/icon-64.png
+
+# Install dependincies.
+sudo apt install apt-transport-https dirmngr gnupg ffmpeg mono-devel -y
 
 mkdir -p ~/LineRider
-cd ~/LineRider || error "Could not move to folder"
+cd ~/LineRider
 
 #Download LRA-Community-Edition build from repo
-wget -O linerider.zip https://github.com/Sussy-OS/LRA-Community-Edition/releases/download/${version}/LineRider.game.auto-release.${version}-LR.zip || error "Could not download linerider"
+wget -O linerider.zip https://github.com/Sussy-OS/LRA-Community-Edition/releases/download/${version}/LineRider.game.auto-release.${version}-LR.zip
 
 #Install
-unzip linerider.zip || error "Could not unzip the files"
+unzip linerider.zip
 rm linerider.zip
 
 #Add system ffmpeg to expected location
@@ -23,7 +27,7 @@ cp $(command -v ffmpeg) ~/Documents/LRA/ffmpeg/linux/ffmpeg
 echo "[Desktop Entry]
 Name=LineRider
 Comment=An Open Source spiritual successor to the flash game Line Rider
-Icon=$(dirname "$0")/icon-64.png
+Icon=/tmp/icon-64.png
 Exec=mono $HOME/LineRider/linerider.exe
 Path=$HOME/LineRider/
 Type=Application
