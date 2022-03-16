@@ -4,7 +4,7 @@ version=2022.3.18
 # Version
 
 # Copy the logo to temp
-wget -O /tmp/icon-64.png https://raw.githubusercontent.com/Sussy-OS/pi-apps/master/apps/LineRider/icon-64.png
+wget -O ./LineRiderLogo/icon-64.png https://raw.githubusercontent.com/Sussy-OS/pi-apps/master/apps/LineRider/icon-64.png
 
 # Install dependincies.
 sudo apt install apt-transport-https dirmngr gnupg ffmpeg mono-devel -y
@@ -27,7 +27,7 @@ cp $(command -v ffmpeg) ~/Documents/LRA/ffmpeg/linux/ffmpeg
 echo "[Desktop Entry]
 Name=LineRider
 Comment=An Open Source spiritual successor to the flash game Line Rider
-Icon=/tmp/icon-64.png
+Icon=./LineRiderLogo/icon-64.png
 Exec=mono $HOME/LineRider/linerider.exe
 Path=$HOME/LineRider/
 Type=Application
