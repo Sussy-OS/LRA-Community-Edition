@@ -3,7 +3,7 @@
 version=2022.3.18
 # Version
 
-# Copy the logo to temp
+# Copy the logo to LineRiderLogo
 wget -O ~/LineRiderLogo/icon-64.png https://raw.githubusercontent.com/Sussy-OS/pi-apps/master/apps/LineRider/icon-64.png
 
 # Install dependincies.
