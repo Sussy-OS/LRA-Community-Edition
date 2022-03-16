@@ -1,5 +1,5 @@
 # IMPORTANT
-This is source code for Pi-Apps, to install on Linux, either build it yourself, ,run the install command below, or download Pi-Apps below!
+This is source code for Pi-Apps, to install on Linux, either build it yourself, run the install command below, or download Pi-Apps below!
 
 
 [![badge](https://github.com/Botspot/pi-apps/blob/master/icons/badge.png?raw=true)](https://github.com/Botspot/pi-apps)  
@@ -26,6 +26,7 @@ wget -qO- https://raw.githubusercontent.com/Sussy-OS/LRA-Community-Edition/linux
 ```
 
 # LRA:CE Features
+* Start from current frame checkbox. (Not on any other LRA-based programs.)
 * Discord activity support (Aka little stats when you click your user)
 * Custom scarves from a .txt file in /LRA/Scarves -> [/Examples/Scarves/README.md](https://github.com/RatherBeLunar/LRA-Community-Edition/tree/master/Examples/Scarves/README.md)
 * Custom amount of scarf segments
