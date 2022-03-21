@@ -10,7 +10,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         
-      - name: download workflow artifact
+      - name: Download workflow artifact
         uses: benday-inc/download-latest-artifact@main
         with:
           token: ${{ secrets.PERSONAL_TOKEN }}
