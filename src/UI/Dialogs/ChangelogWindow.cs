@@ -25,8 +25,7 @@ namespace linerider.UI
                     "* Added updater script for when Pi-Apps does not do it automatically.\n" +
                     "* Just finished adding the changelog, currently, all bugs are fixed.\n" +
                     "================================================================================================================================\n" +
-                    "\n" +
-                    "NOTE: Discord is *still* auto disabled on startup for now until I reimplement it in a more stable way.";
+                    "\n";
 
 
             ControlBase bottomcontainer = new ControlBase(this)
