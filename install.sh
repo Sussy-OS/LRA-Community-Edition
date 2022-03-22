@@ -1,13 +1,13 @@
 #!/bin/bash
 
-version=2022.3.18
+version=2022.3.20
 # Version
 
 # Copy the logo to disk
 wget -O LineRiderLogo.png https://raw.githubusercontent.com/Sussy-OS/pi-apps/master/apps/LineRider/icon-64.png
 
 # Install dependincies.
-sudo apt install apt-transport-https dirmngr gnupg ffmpeg mono-devel -y
+sudo apt install apt-transport-https dirmngr gnupg ffmpeg mono-devel unzip zip -y
 
 mkdir -p ~/LineRider
 cd ~/LineRider
