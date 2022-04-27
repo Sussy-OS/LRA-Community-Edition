@@ -23,6 +23,9 @@ rm linerider.zip
 mkdir -p ~/Documents/LRA/ffmpeg/linux
 cp $(command -v ffmpeg) ~/Documents/LRA/ffmpeg/linux/ffmpeg
 
+#Make sure there is a app directory
+sudo mkdir ~/.local/share/applications/
+
 #Menu shortcut
 echo "[Desktop Entry]
 Name=LineRider
