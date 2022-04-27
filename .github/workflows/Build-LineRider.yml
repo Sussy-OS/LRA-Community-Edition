@@ -3,8 +3,6 @@ name: Build LineRider
 on:
   push:
     branches: [ linux ]
-  pull_request:
-    branches: [ linux ]
 
 env:
   # Path to the solution file relative to the root of the project.
