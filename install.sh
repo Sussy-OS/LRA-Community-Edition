@@ -24,7 +24,7 @@ mkdir -p ~/Documents/LRA/ffmpeg/linux
 cp $(command -v ffmpeg) ~/Documents/LRA/ffmpeg/linux/ffmpeg
 
 #Make sure there is a app directory
-sudo mkdir ~/.local/share/applications/
+sudo mkdir ~/usr/share/applications/
 
 #Menu shortcut
 echo "[Desktop Entry]
@@ -35,4 +35,4 @@ Exec=mono $HOME/LineRider/linerider.exe
 Path=$HOME/LineRider/
 Type=Application
 Terminal=false
-Categories=Game;" > ~/.local/share/applications/LineRider.desktop
+Categories=Game;" > /usr/share/applications/LineRider.desktop
