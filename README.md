@@ -12,7 +12,7 @@ This project's goal is to unify the best features from several existing forks of
 ## Install & Uninstall
 You will need to run 
 ```
-sudo wget -qO- https://raw.githubusercontent.com/Sussy-OS/LRA-Community-Edition/linux/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/Sussy-OS/LRA-Community-Edition/linux/install.sh | bash
 ``` 
 or install it from Pi-Apps:
 
