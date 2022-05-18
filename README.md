@@ -12,18 +12,21 @@ This project's goal is to unify the best features from several existing forks of
 ## Install & Uninstall
 You will need to run 
 ```
-wget -qO- https://raw.githubusercontent.com/Sussy-OS/LRA-Community-Edition/linux/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/Sussy-OS/LRA-Community-Edition/linux/install | bash
 ``` 
 or install it from Pi-Apps:
 
 
 [![badge](https://github.com/Botspot/pi-apps/blob/master/icons/badge.png?raw=true)](https://github.com/Botspot/pi-apps) 
 
+<details>
+<summary><b>To uninstall Pi-Apps</b></summary>
+This will not uninstall any user data. To uninstall user data, remove the ~/Documents/LRA/ folder.
 
-To uninstall, run 
 ```
-wget -qO- https://raw.githubusercontent.com/Sussy-OS/LRA-Community-Edition/linux/uninstall.sh | bash
+wget -qO- https://raw.githubusercontent.com/Sussy-OS/LRA-Community-Edition/linux/uninstall | bash
 ```
+</details>
 
 # LRA:CE Features
 * Start from current frame checkbox. (Not on any other LRA-based programs.)

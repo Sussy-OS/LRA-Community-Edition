@@ -1,13 +1,9 @@
 #!/bin/bash
 
-version=2022.3.20
-# Version
+version=2022.3.21
+#Release Version
 
-# Copy the logo to disk
-wget -O LineRiderLogo.png https://raw.githubusercontent.com/Sussy-OS/pi-apps/master/apps/LineRider/icon-64.png
-
-# Install dependincies.
-sudo apt install apt-transport-https dirmngr gnupg ffmpeg mono-devel unzip zip -y
+sudo apt install -y apt-transport-https dirmngr gnupg ffmpeg mono-devel unzip zip
 
 mkdir -p ~/LineRider
 cd ~/LineRider
@@ -23,16 +19,13 @@ rm linerider.zip
 mkdir -p ~/Documents/LRA/ffmpeg/linux
 cp $(command -v ffmpeg) ~/Documents/LRA/ffmpeg/linux/ffmpeg
 
-#Make sure there is a app directory
-sudo mkdir ~/usr/share/applications/
-
 #Menu shortcut
 echo "[Desktop Entry]
 Name=LineRider
 Comment=An Open Source spiritual successor to the flash game Line Rider
-Icon=$HOME/LineRiderLogo.png
+Icon=$(dirname "$0")/icon-64.png
 Exec=mono $HOME/LineRider/linerider.exe
 Path=$HOME/LineRider/
 Type=Application
 Terminal=false
-Categories=Game;" > /usr/share/applications/LineRider.desktop
+Categories=Game;" > ~/.local/share/applications/LineRider.desktop

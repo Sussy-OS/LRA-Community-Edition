@@ -21,6 +21,7 @@ namespace linerider.UI
             var changelogText = "" +
                     "================================================================================================================================\n" +
                     "Linux Build Changelog\n" +
+		    "* Attempt fix to install.\n" +
                     "* Fixed install.sh\n" +
                     "* Removed some changelogs. To see them, click see 'previous changes'.\n" +
                     "* Added updater script for when Pi-Apps does not do it automatically.\n" +
