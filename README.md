@@ -20,7 +20,7 @@ or install it from Pi-Apps:
 [![badge](https://github.com/Botspot/pi-apps/blob/master/icons/badge.png?raw=true)](https://github.com/Botspot/pi-apps) 
 
 <details>
-<summary><b>To uninstall Pi-Apps</b></summary>
+<summary><b>To uninstall LineRider</b></summary>
 This will not uninstall any user data. To uninstall user data, remove the ~/Documents/LRA/ folder.
 
 ```
