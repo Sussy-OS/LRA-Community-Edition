@@ -21,6 +21,7 @@ namespace linerider.UI
             var changelogText = "" +
                     "================================================================================================================================\n" +
                     "Linux Build Changelog\n" +
+		    "* Optimized all images, so will load faster!\n" +
 		    "* Attempt fix to install.\n" +
                     "* Fixed install.sh\n" +
                     "* Removed some changelogs. To see them, click see 'previous changes'.\n" +
