@@ -1,8 +1,6 @@
 name: Build LineRider
 
-on:
-  push:
-    branches: [ linux ]
+on: workflow_dispatch
 
 env:
   # Path to the solution file relative to the root of the project.
