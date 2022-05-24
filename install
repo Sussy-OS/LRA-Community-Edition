@@ -4,7 +4,7 @@ version=2022.5.3
 #Release Version
 
 #Copy logo to $HOME
-wget -O LineRiderLogo.png https://raw.githubusercontent.com/Botspot/pi-apps/master/apps/LineRider/inon-64.png
+wget -O LineRiderLogo.png https://raw.githubusercontent.com/Sussy-OS/LRA-Community-Edition/linux/Logo.png
 
 #Install dependincies
 sudo apt install -y apt-transport-https dirmngr gnupg ffmpeg mono-devel unzip zip
