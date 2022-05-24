@@ -1,0 +1,48 @@
+name: Update Version Files
+
+on:
+  push:
+    branches: [ linux ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    
+    - uses: actions/checkout@master
+      with:
+        persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
+        fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
+        
+      - name: Get next version
+        uses: reecetech/version-increment@2022.2.5
+        id: version
+        with:
+          scheme: calver
+          increment: patch
+          
+    - name: Create local changes 1
+      run: sed '1 c\${{ steps.version.outputs.version }}' version
+      
+    - name: Create local changes 2
+      run: sed '3 c\version=${{ steps.version.outputs.version }}' install
+      
+    - name: Create local changes 3
+      run: sed '39 c\        public static string Version = "${{ steps.version.outputs.version }}";' src/Program.cs
+      
+    - name: Commit & Push changes
+      uses: Andro999b/push@v1.3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        
+      - name: Invoke workflow without inputs
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Upload Files
+          token: ${{ secrets.PERSONAL_TOKEN }}
+          
+      - name: Invoke workflow without inputs
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Upload Files
+          token: ${{ secrets.PERSONAL_TOKEN }}
