@@ -2,3 +2,4 @@
 
 rm -rf ~/LineRider/ ~/.local/share/applications/LineRider.desktop
 rm ~/LineRiderLogo.png
+echo "Uninstalled LineRider!"

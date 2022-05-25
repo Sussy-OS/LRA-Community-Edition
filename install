@@ -33,3 +33,5 @@ Path=$HOME/LineRider/
 Type=Application
 Terminal=false
 Categories=Game;" > ~/.local/share/applications/LineRider.desktop
+
+echo "Installed LineRider!"
