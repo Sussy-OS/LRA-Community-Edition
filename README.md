@@ -39,7 +39,7 @@ wget -qO- https://raw.githubusercontent.com/Sussy-OS/LRA-Community-Edition/linux
 * Custom scarves on a rider png -> [/Examples/Riders/Bosh-Custom-Scarf-On-Png-Example/README.md](https://github.com/RatherBeLunar/LRA-Community-Edition/tree/master/Examples/Riders/Bosh-Custom-Scarf-On-Png-Example/README.md)
 
 # Issues
-Please, if you have an issue, make an issue using the provided template.
+Please, if you have an issue, make an issue here! (Or on Pi-Apps)
 
 # Sugjestions
 If you think you know a way to make this better, let me know! Just fork this repo, edit it, and make a pull request.
