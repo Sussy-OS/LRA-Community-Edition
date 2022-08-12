@@ -8,10 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
         
       - name: Download workflow artifact
-        uses: benday-inc/download-latest-artifact@main
+        uses: benday-inc/download-latest-artifact@v2.1
         with:
           token: ${{ secrets.PERSONAL_TOKEN }}
           repository_owner: 'Sussy-OS'
