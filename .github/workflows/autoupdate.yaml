@@ -13,6 +13,6 @@ jobs:
     name: autoupdate
     runs-on: ubuntu-20.04
     steps:
-      - uses: docker://chinthakagodawita/autoupdate-action:v1
+      - uses: docker://chinthakagodawita/autoupdate-action:v1.6.0
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
