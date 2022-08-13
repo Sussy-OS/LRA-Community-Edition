@@ -1,7 +1,6 @@
 name: autoupdate
 on:
   # This will trigger on all pushes to all branches.
-  workflow_dispatch:
   push: {}
   # Alternatively, you can only trigger if commits are pushed to certain branches, e.g.:
   # push:
