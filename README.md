@@ -41,10 +41,11 @@ wget -qO- https://raw.githubusercontent.com/Sussy-OS/LRA-Community-Edition/linux
 # Issues
 Please, if you have an issue, make an issue here! (Or on Pi-Apps)
 
-# Sugjestions
+# Suggestions
 If you think you know a way to make this better, let me know! Just fork this repo, edit it, and make a pull request.
 
 # Build
+First extract the source code and download [gwen-lra](https://github.com/RatherBeLunar/gwen-lra)'s source code and extract it to the /lib/gwen-lra/ folder
 Run nuget restore in src (Visual Studio (not VS Code) will do this for you)
 Build src/linerider.sln with msbuild or Visual Studio
 
@@ -68,4 +69,3 @@ The UI is a modified modified version of gwen-dotnet by jealouscloud
 
 # License
 LRA:CE is licensed under GPL3.
-
