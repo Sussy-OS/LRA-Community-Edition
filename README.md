@@ -1,5 +1,5 @@
 # IMPORTANT
-This is source code for Pi-Apps, to install on Linux, either build it yourself, run the install command below, or download Pi-Apps below!
+This is mainly maintained for Pi-Apps, the Debian open sourced app store. If you would like to use this, please install it on Pi-Apps [![badge](https://github.com/Botspot/pi-apps/blob/master/icons/badge.png?raw=true)](https://github.com/Botspot/pi-apps) or run the install.sh below.
 
 
 [![badge](https://github.com/Botspot/pi-apps/blob/master/icons/badge.png?raw=true)](https://github.com/Botspot/pi-apps)  
