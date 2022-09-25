@@ -18,7 +18,7 @@ jobs:
           increment: patch
         
       - name: Make Changelog
-        uses: johnyherangi/create-release-notes@v1.0.0
+        uses: johnyherangi/create-release-notes@v1.0.1
         id: create-release-notes
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
