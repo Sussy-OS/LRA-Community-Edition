@@ -8,17 +8,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3.0.2
+        uses: actions/checkout@v3.2.0
           
       - name: Get next version
-        uses: reecetech/version-increment@2022.5.1
+        uses: reecetech/version-increment@2022.10.3
         id: version
         with:
           scheme: calver
           increment: patch
         
       - name: Make Changelog
-        uses: johnyherangi/create-release-notes@v1.0.0
+        uses: johnyherangi/create-release-notes@v1.0.1
         id: create-release-notes
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
@@ -47,7 +47,7 @@ jobs:
           prerelease: false
           
       - name: Invoke workflow without inputs
-        uses: benc-uk/workflow-dispatch@v1.1
+        uses: benc-uk/workflow-dispatch@v1.2.2
         with:
           workflow: Upload Files
           token: ${{ secrets.PERSONAL_TOKEN }}
