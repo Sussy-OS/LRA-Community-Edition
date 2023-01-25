@@ -14,7 +14,7 @@ You will need to run
 ```
 wget -qO- https://raw.githubusercontent.com/Sussy-OS/LRA-Community-Edition/linux/install | bash
 ``` 
-This install ^ is now stable!
+This install ^ is ***NOT*** stable! Please use Pi-Apps below:
 
 or install it from Pi-Apps:
 
