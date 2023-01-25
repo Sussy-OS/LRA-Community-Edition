@@ -275,7 +275,7 @@ namespace linerider.IO
                             var screenshot = GrabScreenshot(game, frontbuffer);
                             SaveScreenshot(game.RenderSize.Width, game.RenderSize.Height, screenshot, dir + Path.DirectorySeparatorChar + "tmp" + (i + 1) + ".png");
                         }
-                        catch (Exception)
+                        catch (Exception e)
                         {
                             hardexit = true;
                             errormessage = "An error occured when saving the frame.\n(Perhaps the resolution chosen is too large?)";

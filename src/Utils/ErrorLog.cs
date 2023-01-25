@@ -48,7 +48,6 @@ namespace linerider.Utils
             {
                 int max = GL.GetInteger((GetPName)OpenTK.Graphics.OpenGL4.All.MaxDebugMessageLength);
                 StringBuilder messageLog = new StringBuilder(max);
-                String message;
                 DebugSource[] sources = new DebugSource[1];
                 DebugType[] types = new DebugType[1];
                 int[] ids = new int[1];
@@ -64,8 +63,7 @@ namespace linerider.Utils
                         ids,
                         severities,
                         lengths,
-                        out message);
-                    messageLog.Append(message);
+                        messageLog);
                     Debug.Assert(count != 0, "Unable to get full debug message log");
                     if (!logother && types[0] == DebugType.DebugTypeOther)
                     {
