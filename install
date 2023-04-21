@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version=2023.4.1
+version=2023.1.1
 #Release Version
 
 #Copy logo to $HOME
