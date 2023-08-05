@@ -1,5 +1,6 @@
 # IMPORTANT
-This is mainly maintained for Pi-Apps, the Debian open sourced app store. If you would like to use this, please install it on Pi-Apps or run the install.sh below.
+This is mainly maintained for Pi-Apps, the Debian open sourced app store. As well as being the more stable way to install, it also contains More Ram, which makes this run faster.
+If you would like to use this, please install it on Pi-Apps.
 
 
 [![badge](https://github.com/Botspot/pi-apps/blob/master/icons/badge.png?raw=true)](https://github.com/Botspot/pi-apps)  
@@ -10,13 +11,7 @@ Line Rider Advanced: Community Edition, abbreviated as LRA:CE, is a fork of [Lin
 This project's goal is to unify the best features from several existing forks of the original Line Rider Advanced all into one version. Once this version is caught up with all others, we, the contributors, will aim to continue development of new features in this repository as opposed to branching off into new forks again.
 
 ## Install & Uninstall
-You will need to run 
-```
-wget -qO- https://raw.githubusercontent.com/Sussy-OS/LRA-Community-Edition/linux/install | bash
-``` 
-This install ^ is ***NOT*** stable! Please use Pi-Apps below:
-
-or install it from Pi-Apps:
+Please, install it from Pi-Apps:
 
 [![badge](https://github.com/Botspot/pi-apps/blob/master/icons/badge.png?raw=true)](https://github.com/Botspot/pi-apps) 
 
