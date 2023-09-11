@@ -21,12 +21,7 @@ namespace linerider.UI
             var changelogText = "" +
                     "================================================================================================================================\n" +
                     "Linux Build Changelog\n" +
-		    "* Optimized all images, so will load faster!\n" +
-		    "* Attempt fix to install.\n" +
-                    "* Fixed install.sh\n" +
-                    "* Removed some changelogs. To see them, click see 'previous changes'.\n" +
-                    "* Added updater script for when Pi-Apps does not do it automatically.\n" +
-                    "* Just finished adding the changelog, currently, all bugs are fixed.\n" +
+		    "* Create backup build in preparation for the Line Rider Overhaul upgrade\n" +
                     "================================================================================================================================\n" +
                     "\n";
 
