@@ -36,7 +36,7 @@ jobs:
             
             If you would like to update your build of LineRider, either wait for Pi-Apps to do it, or run this command in your HOME directory:
             ```
-            rm -rf LineRider && mkdir LineRider && cd LineRider && wget -O linerider.zip "https://github.com/Sussy-OS/LRA-Community-Edition/releases/download/${{ steps.version.outputs.version }}/LineRider.game.auto-release.${{ steps.version.outputs.version }}-LR.zip" && unzip linerider.zip && rm linerider.zip
+            rm -rf LineRider && sudo rm -rf /opt/LineRider && sudo mkdir /opt/LineRider && cd /opt/LineRider && sudo wget -O linerider.zip "https://github.com/Sussy-OS/LRA-Community-Edition/releases/download/${{ steps.version.outputs.version }}/LineRider.game.auto-release.${{ steps.version.outputs.version }}-LR.zip" && sudo unzip linerider.zip && sudo rm linerider.zip
             ```
 
               ## Changelog:
