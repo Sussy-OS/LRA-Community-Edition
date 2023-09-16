@@ -23,9 +23,6 @@ jobs:
     - name: Edit version file
       run: sed -i '1 c\${{ steps.version.outputs.version }}' version
       
-    - name: Edit install file
-      run: sed -i '3 c\version=${{ steps.version.outputs.version }}' install
-      
     - name: Edit src/Program.cs file
       run: sed -i '39 c\        public static string Version = "${{ steps.version.outputs.version }}";' src/Program.cs
       
