@@ -37,7 +37,7 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: ren Build linerider
       
-    - uses: actions/upload-artifact@v4.3.0
+    - uses: actions/upload-artifact@v4.3.1
       with:
         name: linerider
         path: linerider
