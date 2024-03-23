@@ -47,7 +47,7 @@ jobs:
           prerelease: false
           
       - name: Invoke workflow without inputs
-        uses: benc-uk/workflow-dispatch@v1.2.2
+        uses: benc-uk/workflow-dispatch@v1.2.3
         with:
           workflow: Upload Files
           token: ${{ secrets.PERSONAL_TOKEN }}
