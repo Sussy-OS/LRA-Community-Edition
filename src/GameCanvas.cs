@@ -16,50 +16,49 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Threading;
-using System.Linq;
-using System.IO;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System;
-using OpenTK;
-using linerider.UI;
-using linerider.Tools;
-using linerider.Audio;
-using Gwen.Skin;
-using Gwen.Controls;
 using Gwen;
-using Color = System.Drawing.Color;
+using Gwen.Controls;
+using Gwen.Skin;
+using linerider.Tools;
+using linerider.UI;
+using linerider.UI.Components;
+using linerider.UI.Widgets;
+using linerider.Utils;
+using OpenTK;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Linq;
 
 namespace linerider
 {
     public class GameCanvas : Canvas
     {
         public static readonly Queue<Action> QueuedActions = new Queue<Action>();
-        public ZoomSlider ZoomSlider;
         public Gwen.Renderer.OpenTK Renderer;
-        private RightInfoBar _infobar;
-        private TrackInfoBar _trackinfobar;
-        private ControlBase _topcontainer;
-        private TimelineWidget _timeline;
+        private InfoBarCoords _infoBarCoords;
+        private TimelineBar _timelineBar;
+        private Panel _speedIncreaseWrapper;
+        private Panel _speedDecreaseWrapper;
+        private ZoomBar _zoom;
+        private SwatchBar _swatchBar;
         private Toolbar _toolbar;
-        private LoadingSprite _loadingsprite;
-        private MainWindow game;
+        private LoadingSprite _loadingSprite;
+        private readonly MainWindow game;
         public PlatformImpl Platform;
         public bool Loading { get; set; }
-        public Color TextForeground
-        {
-            get
-            {
-                return Settings.NightMode ? Skin.Colors.Text.Highlight : Skin.Colors.Text.Foreground;
-            }
-        }
-        public bool IsModalOpen
-        {
-            get { return Children.FirstOrDefault(x => x is Gwen.ControlInternal.Modal) != null; }
-        }
+        public Color TextForeground => Settings.NightMode ? Skin.Colors.Text.Highlight : Skin.Colors.Text.Foreground;
+        public bool IsModalOpen => Children.FirstOrDefault(x => x is Gwen.ControlInternal.Modal) != null;
         private Tooltip _usertooltip;
-        public bool Scrubbing => _timeline.Playhead.Held;
+        public bool Scrubbing => _timelineBar.Scrubbing;
+        public int TrackDuration
+        {
+            get => _timelineBar.Duration;
+            set => _timelineBar.Duration = value;
+        }
+
         public readonly Fonts Fonts;
 
         public GameCanvas(
@@ -70,7 +69,7 @@ namespace linerider
         {
             game = Game;
             Fonts = fonts;
-            this.Renderer = renderer;
+            Renderer = renderer;
             Platform = new PlatformImpl(Game);
             Gwen.Platform.Neutral.Implementation = Platform;
             CreateUI();
@@ -78,14 +77,18 @@ namespace linerider
         }
         private void Think(object sender, EventArgs e)
         {
-            //process recording junk
-            var rec = Settings.Local.RecordingMode;
-            ZoomSlider.IsHidden = rec;
+            // Process recording junk
+            bool rec = Settings.Local.RecordingMode;
             _toolbar.IsHidden = rec && !Settings.Recording.ShowTools;
-            _timeline.IsHidden = rec;
-            //
-            _loadingsprite.IsHidden = rec || !Loading;
-            var selectedtool = CurrentTools.SelectedTool;
+            _swatchBar.IsHidden = rec || !CurrentTools.CurrentTool.ShowSwatch;
+            _infoBarCoords.IsHidden = rec || !Settings.Editor.ShowCoordinateMenu;
+            _timelineBar.IsHidden = rec;
+            _zoom.IsHidden = rec || !Settings.UIShowZoom;
+            _loadingSprite.IsHidden = rec || !Loading;
+            _speedDecreaseWrapper.IsHidden = !Settings.UIShowSpeedButtons;
+            _speedIncreaseWrapper.IsHidden = !Settings.UIShowSpeedButtons;
+
+            Tool selectedtool = CurrentTools.CurrentTool;
             _usertooltip.IsHidden = !(selectedtool.Active && selectedtool.Tooltip != "");
             if (!_usertooltip.IsHidden)
             {
@@ -94,9 +97,9 @@ namespace linerider
                     _usertooltip.Text = selectedtool.Tooltip;
                     _usertooltip.Layout();
                 }
-                var mousePos = Gwen.Input.InputHandler.MousePosition;
-                var bounds = _usertooltip.Bounds;
-                var offset = Util.FloatRect(
+                Point mousePos = Gwen.Input.InputHandler.MousePosition;
+                Rectangle bounds = _usertooltip.Bounds;
+                Rectangle offset = Util.FloatRect(
                     mousePos.X - bounds.Width * 0.5f,
                     mousePos.Y - bounds.Height - 10,
                     bounds.Width,
@@ -108,60 +111,112 @@ namespace linerider
         private void CreateUI()
         {
             _usertooltip = new Tooltip(this) { IsHidden = true };
-            _loadingsprite = new LoadingSprite(this)
+
+            ControlBase bottomArea = new WidgetContainer(this)
             {
-                Positioner = (o) =>
-                {
-                    return new System.Drawing.Point(
-                        Width - _loadingsprite.Width,
-                        0);
-                },
+                Margin = new Margin(WidgetContainer.WidgetMargin * 25, 0, WidgetContainer.WidgetMargin * 25, WidgetContainer.WidgetMargin),
+                Dock = Dock.Bottom,
             };
-            _loadingsprite.SetImage(GameResources.loading);
-            _toolbar = new Toolbar(this, game.Track) { Y = 0 };
-            ZoomSlider = new ZoomSlider(this, game.Track);
-            _timeline = new TimelineWidget(this, game.Track);
-            _topcontainer = new Panel(this)
+            _timelineBar = new TimelineBar(bottomArea, game.Track)
             {
-                Height = 100,
-                Dock = Dock.Top,
+                Dock = Dock.Fill,
+            };
+            _zoom = new ZoomBar(bottomArea, game.Track)
+            {
+                Margin = new Margin(WidgetContainer.WidgetMargin, 0, 0, 0),
+                Dock = Dock.Right,
+            };
+
+            _speedIncreaseWrapper = new Panel(bottomArea)
+            {
                 ShouldDrawBackground = false,
                 MouseInputEnabled = false,
+                AutoSizeToContents = true,
+                Dock = Dock.Right,
             };
-            _infobar = new RightInfoBar(_topcontainer, game.Track);
-            _trackinfobar = new TrackInfoBar(_topcontainer, game.Track);
-        }
-        private string GetTitle() //unused copy of get title?
-        {
-            string name = game.Track.Name;
-            var changes = Math.Min(999, game.Track.TrackChanges);
-            if (changes > 0)
+            _ = new WidgetButton(_speedIncreaseWrapper)
             {
-                name += " (*)\n";
-                if (changes > 50)
-                {
-                    int rounded = changes;
-                    if (changes < 999)
-                    {
-                        if (changes >= 200)
-                        {
-                            rounded = (changes / 100) * 100;
-                        }
-                        else
-                        {
-                            rounded = (changes / 50) * 50;
-                        }
-                    }
-                    name += (rounded) + "+ changes";
-                }
-            }
-            return name;
+                Dock = Dock.Top,
+                Name = "Increase Speed",
+                Icon = GameResources.icon_speedup.Bitmap,
+                Action = (o, e) => game.Track.PlaybackSpeedUp(),
+                Hotkey = Hotkey.PlaybackSpeedUp,
+            };
+            _speedDecreaseWrapper = new Panel(bottomArea)
+            {
+                ShouldDrawBackground = false,
+                MouseInputEnabled = false,
+                AutoSizeToContents = true,
+                Dock = Dock.Left,
+            };
+            _= new WidgetButton(_speedDecreaseWrapper)
+            {
+                Dock = Dock.Top,
+                Name = "Decrease Speed",
+                Icon = GameResources.icon_slowdown.Bitmap,
+                Action = (o, e) => game.Track.PlaybackSpeedDown(),
+                Hotkey = Hotkey.PlaybackSpeedDown,
+            };
+
+            ControlBase leftArea = new Panel(this)
+            {
+                Margin = new Margin(WidgetContainer.WidgetMargin, WidgetContainer.WidgetMargin, 0, 0),
+                ShouldDrawBackground = false,
+                MouseInputEnabled = false,
+                AutoSizeToContents = true,
+                Dock = Dock.Left,
+            };
+            _ = new InfoBarLeft(leftArea, game.Track)
+            {
+                Dock = Dock.Top,
+            };
+            _infoBarCoords = new InfoBarCoords(leftArea)
+            {
+                Dock = Dock.Top,
+                Margin = new Margin(0, WidgetContainer.WidgetMargin, 0, 0),
+            };
+
+            WidgetContainer topArea = new WidgetContainer(this)
+            {
+                AutoSizeToContents = true,
+                Positioner = (o) => new Point(Width / 2 - o.Width / 2, WidgetContainer.WidgetMargin),
+            };
+            _toolbar = new Toolbar(topArea, game)
+            {
+                Dock = Dock.Top,
+            };
+            _swatchBar = new SwatchBar(topArea, game.Track)
+            {
+                AutoSizeToContents = true,
+                Dock = Dock.Left,
+            };
+
+            ControlBase rightArea = new Panel(this)
+            {
+                Margin = new Margin(0, WidgetContainer.WidgetMargin, WidgetContainer.WidgetMargin, 0),
+                ShouldDrawBackground = false,
+                MouseInputEnabled = false,
+                AutoSizeToContents = true,
+                Dock = Dock.Right,
+            };
+            _ = new InfoBarRight(rightArea, game.Track)
+            {
+                Dock = Dock.Top,
+            };
+
+            _loadingSprite = new LoadingSprite(this)
+            {
+                Positioner = (o) => new Point(
+                    topArea.X + topArea.Width,
+                    topArea.Y + WidgetContainer.WidgetPadding
+                ),
+            };
         }
         protected override void OnChildAdded(ControlBase child)
         {
             if (child is Gwen.ControlInternal.Modal || child is WindowControl)
             {
-                CurrentTools.SelectedTool.Stop();
+                CurrentTools.CurrentTool.Stop();
             }
         }
         public override void Think()
@@ -176,23 +231,23 @@ namespace linerider
         {
             try
             {
-                Process.Start(url);
+                _ = Process.Start(url);
             }
             catch
             {
-                // hack because of this: https://github.com/dotnet/corefx/issues/10361
+                // Hack because of this: https://github.com/dotnet/corefx/issues/10361
                 if (Configuration.RunningOnWindows)
                 {
                     url = url.Replace("&", "^&");
-                    Process.Start(new ProcessStartInfo("cmd", $"/c start {url}") { CreateNoWindow = true });
+                    _ = Process.Start(new ProcessStartInfo("cmd", $"/c start {url}") { CreateNoWindow = true });
                 }
                 else if (Configuration.RunningOnMacOS)
                 {
-                    Process.Start("open", url);
+                    _ = Process.Start("open", url);
                 }
                 else if (Configuration.RunningOnLinux)
                 {
-                    Process.Start("xdg-open", url);
+                    _ = Process.Start("xdg-open", url);
                 }
                 else
                 {
@@ -200,21 +255,25 @@ namespace linerider
                 }
             }
         }
+        public void RefreshCursors()
+        {
+            game.Cursors.Reload();
+            game.Cursors.Refresh(this);
+        }
         public void ShowChangelog()
         {
-            if (Settings.showChangelog != true) { return; }
             ShowDialog(new ChangelogWindow(this, game.Track));
         }
 
-        public static bool ShowLoadCrashBackup(Canvas canvas, string name)
+        public static bool ShowLoadCrashBackup(string name)
         {
             bool ret = false;
-            var text = "" +
+            string text = "" +
                 "Hey, it looks like you are trying to load a Crash Backup.\n" +
                 "(" + name + ")\n" +
                 "Some issues with the save may cause the file to always crash this program.\n" +
                 "Are you sure you want to load it?";
-            var title = "So about that crash backup...";
+            string title = "So about that crash backup...";
 
             if (System.Windows.Forms.MessageBox.Show(text, title,
                 System.Windows.Forms.MessageBoxButtons.YesNo)
@@ -231,7 +290,8 @@ namespace linerider
         {
             if (Program.NewVersion == null)
                 return;
-            var window = MessageBox.Show(this, "Would you like to download the latest version?", "Update Available! v" + Program.NewVersion, MessageBox.ButtonType.OkCancel);
+
+            MessageBox window = MessageBox.Show(this, "Would you like to download the latest version?", "Update Available! v" + Program.NewVersion, MessageBox.ButtonType.OkCancel, true, true);
             window.RenameButtons("Go to Download");
             window.Dismissed += (o, e) =>
             {
@@ -239,7 +299,7 @@ namespace linerider
                 {
                     try
                     {
-                        OpenUrl(@"https://github.com/Sussy-OS/LRA-Community-Edition/releases/latest");
+                        OpenUrl($"{Constants.GithubPageHeader}/releases/latest");
                     }
                     catch
                     {
@@ -249,14 +309,11 @@ namespace linerider
             };
             Program.NewVersion = null;
         }
-        public void ShowError(string message)
-        {
-            MessageBox.Show(this, message, "Error!");
-        }
+        public void ShowError(string message) => MessageBox.Show(this, message, "Error!");
         public List<ControlBase> GetOpenWindows()
         {
             List<ControlBase> ret = new List<ControlBase>();
-            foreach (var child in Children)
+            foreach (ControlBase child in Children)
             {
                 if (child is WindowControl)
                 {
@@ -264,7 +321,7 @@ namespace linerider
                 }
                 else if (child is Gwen.ControlInternal.Modal)
                 {
-                    foreach (var modalchild in child.Children)
+                    foreach (ControlBase modalchild in child.Children)
                     {
                         if (modalchild is WindowControl w)
                         {
@@ -287,29 +344,15 @@ namespace linerider
             game.StopTools();
             window.ShowCentered();
         }
-        public void ShowSaveDialog()
-        {
-            ShowDialog(new SaveWindow(this, game.Track));
-        }
-        public void ShowLoadDialog()
-        {
-            ShowDialog(new LoadWindow(this, game.Track));
-        }
-        public void ShowPreferencesDialog()
-        {
-            ShowDialog(new PreferencesWindow(this, game.Track));
-        }
-        public void ShowTrackPropertiesDialog()
-        {
-            ShowDialog(new TrackInfoWindow(this, game.Track));
-        }
-        public void ShowTriggerWindow()
-        {
-            ShowDialog(new TriggerWindow(this, game.Track));
-        }
+        public void ShowSaveDialog() => ShowDialog(new SaveWindow(this, game.Track));
+        public void ShowLoadDialog() => ShowDialog(new LoadWindow(this, game.Track));
+        public void ShowPreferencesDialog() => ShowDialog(new PreferencesWindow(this, game.Track));
+        public void ShowTrackPropertiesDialog() => ShowDialog(new TrackInfoWindow(this, game.Track));
+        public void ShowTriggerWindow() => ShowDialog(new TriggerWindow(this, game.Track));
+        public void ShowTimelineEditorWindow() => ShowDialog(new TimelineEditorWindow(this, game.Track));
         public void ShowExportVideoWindow()
         {
-            if (File.Exists(linerider.IO.ffmpeg.FFMPEG.ffmpeg_path))
+            if (File.Exists(IO.ffmpeg.FFMPEG.ffmpeg_path))
             {
                 ShowDialog(new ExportWindow(this, game.Track, game));
             }
@@ -318,17 +361,11 @@ namespace linerider
                 ShowffmpegMissing();
             }
         }
-        public void ShowScreenCaptureWindow()
-        {
-            ShowDialog(new ScreenshotWindow(this, game.Track, game));
-        }
-        public void ShowGameMenuWindow()
-        {
-            ShowDialog(new GameMenuWindow(this, game.Track));
-        }
+        public void ShowScreenCaptureWindow() => ShowDialog(new ScreenshotWindow(this, game.Track, game));
+        public void ShowGameMenuWindow() => ShowDialog(new GameMenuWindow(this, game.Track));
         public void ShowffmpegMissing()
         {
-            var mbox = MessageBox.Show(
+            MessageBox mbox = MessageBox.Show(
                 this,
                 "This feature requires ffmpeg for encoding.\n" +
                 "Automatically download it?",
@@ -346,13 +383,10 @@ namespace linerider
         }
         public void ShowLineWindow(Game.GameLine line, int x, int y)
         {
-            var wnd = new LineWindow(this, game.Track, line);
+            LineWindow wnd = new LineWindow(this, game.Track, line);
             ShowDialog(wnd);
             wnd.SetPosition(x - wnd.Width / 2, y - wnd.Height / 2);
         }
-        public void ShowGeneratorWindow(Vector2d pos)
-        {
-            ShowDialog(new GeneratorWindow(this, game.Track, pos));
-        }
+        public void ShowGeneratorWindow(Vector2d pos) => ShowDialog(new GeneratorWindow(this, pos));
     }
 }

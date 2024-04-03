@@ -16,21 +16,20 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using linerider.Audio;
+using linerider.Drawing;
+using linerider.Game;
+using linerider.IO;
+using linerider.Rendering;
+using linerider.Tools;
+using linerider.Utils;
+using OpenTK;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using linerider.Drawing;
-using linerider.Rendering;
-using linerider.Game;
-using OpenTK;
+using System.Drawing;
 using System.IO;
 using System.Threading;
-using Gwen.Controls;
-using linerider.Tools;
-using linerider.Audio;
-using linerider.Utils;
-using linerider.IO;
 
 namespace linerider
 {
@@ -40,19 +39,20 @@ namespace linerider
         private bool _loadingTrack = false;
         private int _prevSaveUndoPos = 0;
         private RiderFrame _flag;
+        private bool _hasflag;
         private Track _track;
         private int _iteration = 6;
         private bool _renderriderinvalid = true;
         private RiderFrame _renderrider = null;
-        private ResourceSync _tracksync = new ResourceSync();
+        private readonly ResourceSync _tracksync = new ResourceSync();
         public SimulationRenderer _renderer = new SimulationRenderer();
         private bool _refreshtrack = false;
         private Vector2d _savedcamera;
         private float _savedzoom;
         private bool _hasstopped = true;
-        private float _zoom = Constants.DefaultZoom;
-        private EditorGrid _cells = new EditorGrid();
+        private readonly EditorGrid _cells = new EditorGrid();
         private bool _invalidated = false;
+        private CancellationTokenSource _cancellationTokenSource;
 
         public readonly GameScheduler Scheduler = new GameScheduler();
         /// <summary>
@@ -64,52 +64,28 @@ namespace linerider
         private bool _paused = false;
         public float Zoom
         {
-            get
-            {
-                return _zoom * Settings.ZoomMultiplier;
-            }
+            get => BaseZoom * Settings.ZoomMultiplier * Settings.Computed.UIScale;
             set
             {
-                _zoom = (float)MathHelper.Clamp(value, Constants.MinimumZoom, Settings.Local.MaxZoom);
+                BaseZoom = (float)MathHelper.Clamp(value, Constants.MinimumZoom, Settings.Computed.MaxZoom);
                 Invalidate();
             }
         }
-        public float BaseZoom //Zoom without the multiplier
-        {
-            get
-            {
-                return _zoom;
-            }
-        }
+        public float BaseZoom { get; private set; } = Constants.DefaultZoom;  // Zoom without the multiplier
         public Song Song
         {
-            get
-            {
-                return _track.Song;
-            }
-            set
-            {
-                _track.Song = value;
-            }
+            get => _track.Song;
+            set => _track.Song = value;
         }
         public ICamera Camera { get; private set; }
         public int LineCount => _track.Lines.Count;
         public int BlueLines => _track.BlueLines;
         public int RedLines => _track.RedLines;
         public int GreenLines => _track.SceneryLines;
-        public int TrackChanges
-        {
-            get
-            {
-                return Math.Abs(UndoManager.ActionCount - _prevSaveUndoPos);
-            }
-        }
+        public int TrackChanges => Math.Abs(UndoManager.ActionCount - _prevSaveUndoPos);
         public float StartZoom
         {
-            get
-            {
-                return _track.StartZoom;
-            }
+            get => _track.StartZoom;
             set
             {
                 if (_track.StartZoom != value)
@@ -123,10 +99,7 @@ namespace linerider
         }
         public float YGravity
         {
-            get
-            {
-                return _track.YGravity;
-            }
+            get => _track.YGravity;
             set
             {
                 if (_track.YGravity != value)
@@ -134,16 +107,13 @@ namespace linerider
                     _track.YGravity = value;
                     Stop();
                     Reset();
-                    RiderConstants.Gravity = new Vector2d(0.175 * _track.XGravity, 0.175 * _track.YGravity); //gravity
+                    RiderConstants.Gravity = new Vector2d(0.175 * _track.XGravity, 0.175 * _track.YGravity); // Gravity
                 }
             }
         }
         public float XGravity
         {
-            get
-            {
-                return _track.XGravity;
-            }
+            get => _track.XGravity;
             set
             {
                 if (_track.XGravity != value)
@@ -151,17 +121,14 @@ namespace linerider
                     _track.XGravity = value;
                     Stop();
                     Reset();
-                    RiderConstants.Gravity = new Vector2d(0.175 * _track.XGravity, 0.175 * _track.YGravity); //gravity
+                    RiderConstants.Gravity = new Vector2d(0.175 * _track.XGravity, 0.175 * _track.YGravity); // Gravity
                 }
             }
         }
 
         public double GravityWellSize
         {
-            get
-            {
-                return _track.GravityWellSize;
-            }
+            get => _track.GravityWellSize;
             set
             {
                 if (_track.GravityWellSize != value)
@@ -174,16 +141,10 @@ namespace linerider
                 }
             }
         }
-        public bool NeedsDraw
-        {
-            get
-            {
-                return _renderer.RequiresUpdate || _refreshtrack || _renderriderinvalid || _invalidated;
-            }
-        }
+        public bool NeedsDraw => _renderer.RequiresUpdate || _refreshtrack || _renderriderinvalid || _invalidated;
         public bool ZeroStart
         {
-            get { return _track.ZeroStart; }
+            get => _track.ZeroStart;
             set
 
             {
@@ -195,9 +156,9 @@ namespace linerider
                 }
             }
         }
-        public bool frictionless
+        public bool Frictionless
         {
-            get { return _track.frictionless; }
+            get => _track.frictionless;
             set
 
             {
@@ -211,7 +172,7 @@ namespace linerider
         }
         public bool UseRemount
         {
-            get { return _track.Remount; }
+            get => _track.Remount;
             set
 
             {
@@ -223,9 +184,11 @@ namespace linerider
                 }
             }
         }
+        public bool HasDefaultTrackBackground => _track.HasDefaultBackground;
+        public bool HasDefaultTrackLineColor => _track.HasDefaultLineColor;
         public int StartingBGColorR
         {
-            get { return _track.BGColorR; }
+            get => _track.BGColorR;
             set
 
             {
@@ -239,7 +202,7 @@ namespace linerider
         }
         public int StartingBGColorG
         {
-            get { return _track.BGColorG; }
+            get => _track.BGColorG;
             set
 
             {
@@ -253,7 +216,7 @@ namespace linerider
         }
         public int StartingBGColorB
         {
-            get { return _track.BGColorB; }
+            get => _track.BGColorB;
             set
 
             {
@@ -267,7 +230,7 @@ namespace linerider
         }
         public int StartingLineColorR
         {
-            get { return _track.LineColorR; }
+            get => _track.LineColorR;
             set
 
             {
@@ -281,7 +244,7 @@ namespace linerider
         }
         public int StartingLineColorG
         {
-            get { return _track.LineColorG; }
+            get => _track.LineColorG;
             set
 
             {
@@ -295,7 +258,7 @@ namespace linerider
         }
         public int StartingLineColorB
         {
-            get { return _track.LineColorB; }
+            get => _track.LineColorB;
             set
 
             {
@@ -319,27 +282,12 @@ namespace linerider
                 return _renderrider;
             }
         }
-        public Rider RenderRider
-        {
-            get
-            {
-                return RenderRiderInfo.State;
-            }
-        }
-        public string Name
-        {
-            get
-            {
-                return _track.Name;
-            }
-        }
+        public Rider RenderRider => RenderRiderInfo.State;
+        public string Name => _track.Name;
 
         public bool Paused
         {
-            get
-            {
-                return _paused;
-            }
+            get => _paused;
             private set
             {
                 if (value == _paused)
@@ -356,10 +304,7 @@ namespace linerider
         /// </summary>
         public int IterationsOffset
         {
-            get
-            {
-                return _iteration;
-            }
+            get => _iteration;
             set
             {
                 if (IterationsOffset > 6 || IterationsOffset < 0)
@@ -367,6 +312,7 @@ namespace linerider
                 _iteration = value;
             }
         }
+        public string CurrentNotifyMessage { get; private set; } = "";
         /// <summary>
         /// The current number of frames since start (incl flag)
         /// </summary>
@@ -396,8 +342,10 @@ namespace linerider
                 }
                 _refreshtrack = false;
             }
-            DrawOptions drawOptions = new DrawOptions();
-            drawOptions.DrawFlag = _flag != null && !Settings.Local.RecordingMode;
+            DrawOptions drawOptions = new DrawOptions
+            {
+                DrawFlag = HasFlag && !Settings.Local.RecordingMode
+            };
             if (drawOptions.DrawFlag)
             {
                 drawOptions.FlagRider = _flag.State;
@@ -407,10 +355,10 @@ namespace linerider
             drawOptions.GravityWells = Settings.Editor.RenderGravityWells;
             drawOptions.LineColors = !Settings.PreviewMode && (!Playing || Settings.ColorPlayback);
             drawOptions.KnobState = KnobState.Hidden;
-            var selectedtool = CurrentTools.SelectedTool;
+            Tool selectedtool = CurrentTools.CurrentTool;
             if (!Playing &&
-                (selectedtool == CurrentTools.MoveTool ||
-                selectedtool == CurrentTools.SelectTool))
+                (selectedtool == CurrentTools.SelectTool ||
+                selectedtool == CurrentTools.SelectSubtool))
             {
                 drawOptions.KnobState = KnobState.Shown;
             }
@@ -433,24 +381,23 @@ namespace linerider
             int renderframe = Offset;
             if (Playing && Offset > 0 && blend < 1)
             {
-                //interpolate between last frame and current one
-                var current = Timeline.GetFrame(Offset);
-                var prev = Timeline.GetFrame(Offset - 1);
+                // Interpolate between last frame and current one
+                Rider current = Timeline.GetFrame(Offset);
+                Rider prev = Timeline.GetFrame(Offset - 1);
                 drawOptions.Rider = Rider.Lerp(prev, current, blend);
                 renderframe = Offset - 1;
             }
             drawOptions.Iteration = IterationsOffset;
-            // todo there's a race condition here where if the track finished 
+            // TODO: there's a race condition here where if the track finished 
             // loading between this if statement and the render call above
             // and theres a line change queued, the line may not exist in
             // renderer, causing a crash
             if (!_loadingTrack)
             {
-                var changes = Timeline.RequestFrameForRender(renderframe);
-                foreach (var change in changes)
+                HashSet<int> changes = Timeline.RequestFrameForRender(renderframe);
+                foreach (int change in changes)
                 {
-                    GameLine line;
-                    if (_track.LineLookup.TryGetValue(change, out line))
+                    if (_track.LineLookup.TryGetValue(change, out GameLine line))
                     {
                         _renderer.RedrawLine(line);
                     }
@@ -459,10 +406,7 @@ namespace linerider
 
             _renderer.Render(_track, Timeline, Camera, drawOptions);
         }
-        public void RedrawLine(GameLine line)
-        {
-            _renderer.RedrawLine(line);
-        }
+        public void RedrawLine(GameLine line) => _renderer.RedrawLine(line);
         public void RedrawAllLines()
         {
             foreach (KeyValuePair<int, GameLine> entry in _track.LineLookup)
@@ -470,28 +414,58 @@ namespace linerider
                 RedrawLine(entry.Value);
             }
         }
+        public void SetDefaultTrackColors()
+        {
+            Color defaultBg = Settings.Colors.ExportBg;
+            Color defaultLine = Settings.Colors.ExportLine;
+
+            _track.BGColorR = defaultBg.R;
+            _track.BGColorG = defaultBg.G;
+            _track.BGColorB = defaultBg.B;
+
+            _track.LineColorR = defaultLine.R;
+            _track.LineColorG = defaultLine.G;
+            _track.LineColorB = defaultLine.B;
+            Stop();
+            Reset();
+        }
+
         public void ZoomBy(float percent)
         {
             if (Math.Abs(percent) < 0.00001)
                 return;
+
+            // 0.2 => 1.2; -0.2 => 0.83
+            float percentNormalized = percent >= 0 ? percent + 1 : 1 / (1 - percent);
+
             UseUserZoom = true;
-            Zoom = _zoom + (_zoom * percent);
+            Zoom = BaseZoom * percentNormalized;
+        }
+        public void ZoomBy(float percent, Point centerPos)
+        {
+            ZoomBy(percent);
+
+            bool isAtZoomLimit = BaseZoom == Settings.Computed.MaxZoom || BaseZoom == (float)Constants.MinimumZoom;
+
+            if (Math.Abs(percent) < 0.00001 || isAtZoomLimit)
+                return;
+
+            // Uh, somehow it fixes negative values
+            if (percent < 0)
+                percent *= 1 / (1 - percent);
+
+            Vector2d pos = Camera.GetCenter();
+
+            pos.X += (centerPos.X * 2 - game.Width) * percent / (Zoom * 2);
+            pos.Y += (centerPos.Y * 2 - game.Height) * percent / (Zoom * 2);
+            Camera.SetFrameCenter(pos);
         }
         /// <summary>
         /// Function to be called after updating the playback buffer
         /// </summary>
-        public void InvalidateRenderRider()
-        {
-            _renderriderinvalid = true;
-        }
-        public void Invalidate()
-        {
-            _invalidated = true;
-        }
-        public Rider GetStart()
-        {
-            return _track.GetStart();
-        }
+        public void InvalidateRenderRider() => _renderriderinvalid = true;
+        public void Invalidate() => _invalidated = true;
+        public Rider GetStart() => _track.GetStart();
         public void Reset()
         {
             Timeline.Restart(_track.GetStart(), _track.StartZoom);
@@ -499,12 +473,12 @@ namespace linerider
         }
         public bool FastGridCheck(double x, double y)
         {
-            var chunk = _cells.GetCellFromPoint(new Vector2d(x, y));
+            EditorCell chunk = _cells.GetCellFromPoint(new Vector2d(x, y));
             return chunk != null && chunk.Count != 0;
         }
         public bool GridCheck(double x, double y)
         {
-            var chunk = _track.Grid.PointToChunk(new Vector2d(x, y));
+            SimulationCell chunk = _track.Grid.PointToChunk(new Vector2d(x, y));
             return chunk != null && chunk.Count != 0;
         }
         /// <summary>
@@ -516,10 +490,7 @@ namespace linerider
             InvalidateRenderRider();
             Invalidate();
         }
-        internal void RestoreFlag(RiderFrame flag)
-        {
-            _flag = flag;
-        }
+        internal void RestoreFlag(RiderFrame flag) => _flag = flag;
         public void ResetSpeedDefault(bool resetscheduler = true)
         {
             Scheduler.DefaultSpeed();
@@ -528,37 +499,34 @@ namespace linerider
                 Scheduler.Reset();
             }
         }
-        public void Flag(int offset, bool canremove = true)
+        public void SetFlagFrame(int offset, bool canremove = true)
         {
-            if (offset < 0)
-                throw new ArgumentOutOfRangeException("Cannot set a flag to a negative frame");
-            if (canremove && _flag != null && _flag.FrameID == offset)
-            {
-                _flag = null;
-            }
+            offset = Math.Max(0, offset);
+            bool removeFlag = canremove && HasFlag && _flag.FrameID == offset;
+
+            if (removeFlag)
+                _hasflag = false;
             else
             {
                 _flag = new RiderFrame { State = Timeline.GetFrame(offset), FrameID = offset };
+                _hasflag = true;
             }
+
+            //_flag = removeFlag ? null : new RiderFrame { State = Timeline.GetFrame(offset), FrameID = offset };
+
             Invalidate();
         }
 
-        public void NextFrame()
-        {
-            SetFrame(++Offset);
-        }
+        public void NextFrame() => SetFrame(++Offset);
 
-        public void PreviousFrame()
-        {
-            SetFrame(Math.Max(0, Offset - 1));
-        }
+        public void PreviousFrame() => SetFrame(Math.Max(0, Offset - 1));
         public void TogglePause()
         {
             Paused = !Paused;
             if (Playing && _hasstopped)
             {
                 _savedcamera = Camera.GetCenter();
-                _savedzoom = Zoom;
+                _savedzoom = BaseZoom;
                 _hasstopped = false;
             }
             Scheduler.Reset();
@@ -567,8 +535,19 @@ namespace linerider
                 Camera.BeginFrame(1, Zoom);
                 Camera.SetFrameCenter(Camera.GetCenter(true));
             }
-            else
+            else if (!Settings.Computed.LockCamera)
             {
+                switch (Settings.PlaybackZoomType)
+                {
+                    case Settings.PlaybackZoomMode.Frame:
+                        UseUserZoom = false;
+                        Zoom = Timeline.GetFrameZoom(Offset);
+                        break;
+                    case Settings.PlaybackZoomMode.AsIs:
+                        UseUserZoom = Timeline.GetFrameZoom(Offset) != Zoom;
+                        break;
+                }
+
                 UpdateCamera();
             }
             Invalidate();
@@ -577,7 +556,7 @@ namespace linerider
         {
             CancelTriggers();
             UseUserZoom = false;
-            var frame = _flag != null ? _flag.FrameID : 0;
+            int frame = HasFlag ? _flag.FrameID : 0;
             Start(frame);
         }
         public void StartIgnoreFlag()
@@ -597,22 +576,23 @@ namespace linerider
             Paused = false;
             Offset = frameid;
             IterationsOffset = 6;
-            Camera.SetFrameCenter(Timeline.GetFrame(frameid).CalculateCenter());
 
             game.UpdateCursor();
-            switch (TrackRecorder.Recording ? 0 : Settings.PlaybackZoomType)
+
+            if (!Settings.Computed.LockCamera)
             {
-                case 0://default
-                    UseUserZoom = false;
-                    Zoom = Timeline.GetFrameZoom(Offset);
-                    break;
-                case 1://current
-                    UseUserZoom = Timeline.GetFrameZoom(Offset) != Zoom;
-                    break;
-                case 2://specific
-                    UseUserZoom = true;
-                    Zoom = Settings.PlaybackZoomValue;
-                    break;
+                Camera.SetFrameCenter(Timeline.GetFrame(frameid).CalculateCenter());
+
+                switch (TrackRecorder.Recording ? Settings.PlaybackZoomMode.Frame : Settings.PlaybackZoomType)
+                {
+                    case Settings.PlaybackZoomMode.Frame:
+                        UseUserZoom = false;
+                        Zoom = Timeline.GetFrameZoom(Offset);
+                        break;
+                    case Settings.PlaybackZoomMode.AsIs:
+                        UseUserZoom = Timeline.GetFrameZoom(Offset) != Zoom;
+                        break;
+                }
             }
             Scheduler.Reset();
             FramerateCounter.Reset();
@@ -624,20 +604,27 @@ namespace linerider
             Paused = true;
             if (!_hasstopped)
             {
-                Zoom = _savedzoom;
-                Camera.SetFrameCenter(_savedcamera);
+                if (!Settings.Computed.LockCamera)
+                {
+                    Zoom = _savedzoom;
+                    Camera.SetFrameCenter(_savedcamera);
+                }
                 _hasstopped = true;
             }
+
             CancelTriggers();
-            int frame = _flag != null ? _flag.FrameID : 0;
+            int frame = HasFlag ? _flag.FrameID : 0;
             SetFrame(frame);
             Camera.BeginFrame(1, Zoom);
-            Camera.SetFrameCenter(Camera.GetCenter(true));
+
+            if (!Settings.Computed.LockCamera)
+                Camera.SetFrameCenter(Camera.GetFrameCamera(frame));
+
             Invalidate();
         }
         public void PlaybackSpeedUp()
         {
-            var index = Array.IndexOf(
+            int index = Array.IndexOf(
                 Constants.MotionArray,
                 Scheduler.UpdatesPerSecond);
             Scheduler.UpdatesPerSecond = Constants.MotionArray[
@@ -648,7 +635,7 @@ namespace linerider
 
         public void PlaybackSpeedDown()
         {
-            var index = Array.IndexOf(
+            int index = Array.IndexOf(
                 Constants.MotionArray,
                 Scheduler.UpdatesPerSecond);
             Scheduler.UpdatesPerSecond =
@@ -657,7 +644,7 @@ namespace linerider
         public void SetFrame(int frame, bool updateslider = true)
         {
             Offset = frame;
-            Timeline.GetFrame(frame);
+            _ = Timeline.GetFrame(frame);
             if (frame + 1 > FrameCount)
                 FrameCount = frame + 1;
             IterationsOffset = 6;
@@ -672,15 +659,25 @@ namespace linerider
                 UpdateCamera();
                 return;
             }
-            for (var i = 0; i < times; i++)
+            for (int i = 0; i < times; i++)
             {
                 NextFrame();
                 UpdateCamera();
             }
         }
 
+        public void ResetCamera()
+        {
+            Zoom = Timeline.GetFrameZoom(Offset);
+            UseUserZoom = false;
+            UpdateCamera();
+        }
+
         public void UpdateCamera(bool reverse = false)
         {
+            if (Settings.Computed.LockCamera)
+                return;
+
             if (!UseUserZoom)
                 Zoom = Timeline.GetFrameZoom(Offset);
             Camera.SetFrame(Offset);
@@ -698,32 +695,35 @@ namespace linerider
                 if (_track.Lines.Count == 0)
                     return;
                 game.Canvas.Loading = true;
-                using (var trk = CreateTrackReader())
+                using (TrackReader trk = CreateTrackReader())
                 {
                     if (Crash)
                     {
-                        var backupName = ("Crash Backup " + DateTime.Now.Month + "." + DateTime.Now.Day + "." + +DateTime.Now.Year + "_" + DateTime.Now.Hour + "." + DateTime.Now.Minute);
+                        string backupName = Constants.CrashBackupPrefix + " " + DateTime.Now.ToString("yyyy'-'MM'-'dd'-'HH'-'mm'-'ss");
                         switch (Settings.DefaultCrashBackupFormat)
                         {
                             case ".trk":
-                                TrackIO.SaveTrackToFile(_track, backupName);
+                                _ = TrackIO.SaveTrackToFile(_track, backupName);
                                 break;
                             case ".json":
-                                TrackIO.SaveTrackToJsonFile(_track, backupName);
+                                _ = TrackIO.SaveTrackToJsonFile(_track, backupName);
                                 break;
                             case ".sol":
-                                TrackIO.SaveToSOL(_track, backupName);
+                                _ = TrackIO.SaveToSOL(_track, backupName);
                                 break;
                             default:
-                                TrackIO.SaveTrackToFile(_track, backupName);
+                                _ = TrackIO.SaveTrackToFile(_track, backupName);
                                 break;
                         }
                     }
                     else
                     {
-                        if (TrackChanges > Settings.autosaveChanges)
+                        if (TrackChanges >=  Settings.autosaveChanges)
                         {
                             TrackIO.CreateAutosave(_track);
+                            ResetTrackChangeCounter();
+                            Settings.LastSelectedTrack = _track.Filename;
+                            Settings.Save();
                         }
                     }
                 }
@@ -746,10 +746,11 @@ namespace linerider
                 using (_tracksync.AcquireWrite())
                 {
                     AudioService.Stop();
-                    CurrentTools.SelectedTool.Stop();
+                    CurrentTools.CurrentTool.Stop();
                     _loadingTrack = true;
                     Stop();
-                    _flag = null;
+                    //_flag = null;
+                    _hasflag = false;
                     _track = trk;
 
                     Timeline = new Timeline(trk);
@@ -757,24 +758,32 @@ namespace linerider
                     InitCamera();
                     _refreshtrack = true;
                     _cells.Clear();
-                    foreach (var line in trk.LineLookup.Values)
+                    foreach (GameLine line in trk.LineLookup.Values)
                     {
                         _cells.AddLine(line);
                     }
                     Reset();
                     Camera.SetFrameCenter(Timeline.GetFrame(0).CalculateCenter());
+                    UseUserZoom = false;
+                    Zoom = trk.StartZoom;
                     _loadingTrack = false;
-                    if (CurrentTools.SelectedTool.Active)
-                    {
-                        CurrentTools.SelectedTool.Stop();
-                    }
+                    if (CurrentTools.CurrentTool.Active)
+                        CurrentTools.CurrentTool.Stop();
                     UndoManager = new UndoManager();
                     ResetTrackChangeCounter();
+                    UpdateTrackDuration();
                 }
             }
             Invalidate();
-            GC.Collect();//this is probably safest place to make the gc work
+            GC.Collect(); // This is probably safest place to make the gc work
             MoveStartWarned = false;
+        }
+        public void UpdateTrackDuration(bool justSyncSong = false)
+        {
+            if (Settings.SyncTrackAndSongDuration && _track.Song.Enabled)
+                game.Canvas.TrackDuration = (int)((AudioService.SongDuration + _track.Song.Offset) * Constants.PhysicsRate);
+            else if (!justSyncSong)
+                game.Canvas.TrackDuration = Constants.MinFrames;
         }
         public void QuickSave()
         {
@@ -782,59 +791,59 @@ namespace linerider
             {
                 ResetTrackChangeCounter();
                 Settings.LastSelectedTrack = _track.Filename;
-                Settings.Save();
+                Settings.ForceSave();
             }
             else
             {
                 game.Canvas.ShowSaveDialog();
             }
         }
-        public void ResetTrackChangeCounter()
-        {
-            this._prevSaveUndoPos = UndoManager.ActionCount;
-        }
-        public void AutoLoadPrevious()
-        {
-            ThreadPool.QueueUserWorkItem((o) =>
-            {
-                try
-                {
-                    AutoLoad();
-                }
-                catch { Debug.WriteLine("Autoload failed!"); }
-            });
-        }
+        public void ResetTrackChangeCounter() => _prevSaveUndoPos = UndoManager.ActionCount;
+        public void AutoLoadPrevious() => ThreadPool.QueueUserWorkItem((o) =>
+                                                   {
+                                                       try
+                                                       {
+                                                           AutoLoad();
+                                                       }
+                                                       catch
+                                                       {
+                                                           Debug.WriteLine("Autoload failed!");
+                                                       }
+                                                   });
         private void AutoLoad()
         {
             try
             {
                 game.Canvas.Loading = true;
-                string lasttrack;
+                string lasttrack = Settings.LastSelectedTrack;
+
                 if (Program.args.Length > 0)
                 {
-                    Settings.LastSelectedTrack = Program.args[0];
-                    lasttrack = Settings.LastSelectedTrack;
+                    lasttrack = Program.args[0];
+                    Settings.LastSelectedTrack = lasttrack;
                 }
-                else
+
+                if (!File.Exists(lasttrack))
+                    return;
+
+                if (lasttrack.Contains(Constants.CrashBackupPrefix))
                 {
-                    lasttrack = Settings.LastSelectedTrack;
-                    var trdr = Constants.TracksDirectory;
-                    if (!lasttrack.StartsWith(trdr))
+                    if (!GameCanvas.ShowLoadCrashBackup(lasttrack))
+                    {
+                        game.Canvas.Loading = false;
                         return;
+                    }
                 }
-                if (lasttrack.Contains("Crash Backup"))
-                {
-                    if (!GameCanvas.ShowLoadCrashBackup(game.Canvas, lasttrack)) { game.Canvas.Loading = false; return; }
-                }
+
                 if (string.Equals(
                     Path.GetExtension(lasttrack),
                     ".trk",
                     StringComparison.InvariantCultureIgnoreCase))
                 {
-                    var trackname = TrackIO.GetTrackName(lasttrack);
+                    string trackname = TrackIO.GetTrackName(lasttrack);
                     lock (LoadSync)
                     {
-                        var track = TRKLoader.LoadTrack(lasttrack, trackname);
+                        Track track = TRKLoader.LoadTrack(lasttrack, trackname);
                         ChangeTrack(track);
                     }
                 }
@@ -843,11 +852,11 @@ namespace linerider
                     ".json",
                     StringComparison.InvariantCultureIgnoreCase))
                 {
-                    var trackname = TrackIO.GetTrackName(lasttrack);
+                    string trackname = TrackIO.GetTrackName(lasttrack);
                     lock (LoadSync)
                     {
-                        var track = JSONLoader.LoadTrack(lasttrack);
-                        if (track.Name == Constants.DefaultTrackName ||
+                        Track track = JSONLoader.LoadTrack(lasttrack);
+                        if (track.Name == Constants.InternalDefaultTrackName ||
                         string.IsNullOrEmpty(track.Name))
                             track.Name = trackname;
                         ChangeTrack(track);
@@ -858,13 +867,13 @@ namespace linerider
                     ".sol",
                     StringComparison.InvariantCultureIgnoreCase))
                 {
-                    var trackname = TrackIO.GetTrackName(lasttrack);
-                    var sol = SOLLoader.LoadSol(lasttrack);
+                    string trackname = TrackIO.GetTrackName(lasttrack);
+                    List<IO.SOL.sol_track> sol = SOLLoader.LoadSol(lasttrack);
                     if (sol.Count == 0)
                         return;
                     lock (LoadSync)
                     {
-                        var track = SOLLoader.LoadTrack(sol[0]);
+                        Track track = SOLLoader.LoadTrack(sol[0]);
                         ChangeTrack(track);
                     }
                 }
@@ -878,22 +887,15 @@ namespace linerider
                 game.Canvas.Loading = false;
             }
         }
-        public TrackWriter CreateTrackWriter()
-        {
-            return TrackWriter.AcquireWrite(_tracksync, _track, _renderer, UndoManager, Timeline, _cells);
-        }
-        public TrackReader CreateTrackReader()
-        {
-            return TrackReader.AcquireRead(_tracksync, _track, _cells);
-        }
+        public TrackWriter CreateTrackWriter() => TrackWriter.AcquireWrite(_tracksync, _track, _renderer, UndoManager, Timeline, _cells);
+        public TrackReader CreateTrackReader() => TrackReader.AcquireRead(_tracksync, _track, _cells);
 
-        internal RiderFrame GetFlag()
-        {
-            return _flag;
-        }
+        public RiderFrame Flag => _flag;
+        public bool HasFlag => _hasflag;
+        //public bool HasFlag => _flag != null;
         private void CancelTriggers()
         {
-            //todo
+            // TODO
         }
         public void InitCamera()
         {
@@ -901,33 +903,36 @@ namespace linerider
                 _track.StartOffset,
                 Vector2d.Zero,
                 _track.Remount,
-                frictionless).CalculateCenter();//avoid a timeline query
+                Frictionless).CalculateCenter(); // Avoid a timeline query
             if (Camera != null)
             {
                 Camera.BeginFrame(1, Zoom);
                 start = Camera.GetCenter(true);
             }
-            if (Settings.SmoothCamera)
-            {
-                if (Settings.PredictiveCamera)
-                    Camera = new PredictiveCamera();
-                else
-                    Camera = new SoftCamera();
-            }
-            else
-            {
-                Camera = new ClampCamera();
-            }
+            Camera = Settings.SmoothCamera ? Settings.PredictiveCamera ? new PredictiveCamera() : (ICamera)new SoftCamera() : new ClampCamera();
             Camera.SetTimeline(Timeline);
             Camera.SetFrameCenter(start);
         }
-        private void FrameInvalidated(object sender, int frame)
+        private void FrameInvalidated(object sender, int frame) => Camera.InvalidateFrame(frame);
+        public Track GetTrack() => _track;
+
+        public void Notify(string message)
         {
-            Camera.InvalidateFrame(frame);
-        }
-        public Track getTrack()
-        {
-            return _track;
+            _cancellationTokenSource?.Cancel();
+
+            _cancellationTokenSource = new CancellationTokenSource();
+            CancellationToken cancellationToken = _cancellationTokenSource.Token;
+
+            CurrentNotifyMessage = message;
+
+            _ = ThreadPool.QueueUserWorkItem(state =>
+            {
+                Thread.Sleep(5000);
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    CurrentNotifyMessage = string.Empty;
+                }
+            }, cancellationToken);
         }
     }
 }

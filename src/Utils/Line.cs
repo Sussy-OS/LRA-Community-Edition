@@ -18,14 +18,11 @@
 
 using OpenTK;
 using System;
-using linerider.Game;
-using linerider.Utils;
-using System.Drawing;
 namespace linerider.Utils
 {
     public class Line
     {
-        public Vector2d Position;
+        public Vector2d Position1;
         public Vector2d Position2;
 
         protected Line()
@@ -33,7 +30,7 @@ namespace linerider.Utils
         }
         public Line(Vector2d p1, Vector2d p2)
         {
-            Position = p1;
+            Position1 = p1;
             Position2 = p2;
         }
         public static Line FromAngle(Vector2d p1, Angle angle, double length)
@@ -42,22 +39,16 @@ namespace linerider.Utils
             ret = new Line(
                 p1,
                 new Vector2d(
-                    p1.X + (length * angle.Cos), 
-                    p1.Y + (length * angle.Sin)));
+                    p1.X + length * angle.Cos,
+                    p1.Y + length * angle.Sin));
             return ret;
         }
-        public double GetLength()
-        {
-            return (Position2 - Position).Length;
-        }
-        public Vector2d GetVector()
-        {
-            return (Position2 - Position);
-        }
+        public double GetLength() => (Position2 - Position1).Length;
+        public Vector2d GetVector() => Position2 - Position1;
 
         public static bool DoesLineIntersectRect(Line l1, DoubleRect rect)
         {
-            Vector2d ps1 = l1.Position;
+            Vector2d ps1 = l1.Position1;
             Vector2d pe1 = l1.Position2;
             if (rect.Contains(ps1.X, ps1.Y) || rect.Contains(pe1.X, pe1.Y))
                 return true;
@@ -73,11 +64,7 @@ namespace linerider.Utils
                 Intersects(ps1, pe1, tr, br) ||
                 Intersects(ps1, pe1, bl, br);
         }
-        public static bool Intersects(Vector2d a1, Vector2d a2, Vector2d b1, Vector2d b2)
-        {
-            Vector2d p;
-            return Intersects(a1, a2, b1, b2, out p);
-        }
+        public static bool Intersects(Vector2d a1, Vector2d a2, Vector2d b1, Vector2d b2) => Intersects(a1, a2, b1, b2, out _);
 
         public static bool Intersects(Vector2d a1, Vector2d a2, Vector2d b1, Vector2d b2, out Vector2d intersection)
         {

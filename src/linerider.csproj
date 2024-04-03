@@ -7,12 +7,13 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>linerider</RootNamespace>
     <AssemblyName>linerider</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <AllowedReferenceRelatedFileExtensions>
       *.pdb;
     </AllowedReferenceRelatedFileExtensions>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -40,25 +41,6 @@
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Addons\AddonManager.cs" />
-    <Compile Include="Addons\BaseAddon.cs" />
-    <Compile Include="Addons\MagicAnimator.cs" />
-    <Compile Include="Addons\LineGenerator\Generator.cs" />
-    <Compile Include="Addons\LineGenerator\GeneratorType.cs" />
-    <Compile Include="Addons\LineGenerator\CircleGenerator.cs" />
-    <Compile Include="Addons\LineGenerator\TenPCGenerator.cs" />
-    <Compile Include="Discord\DiscordActivityController.cs" />
-    <Compile Include="DiscordGameSDK\ActivityManager.cs" />
-    <Compile Include="DiscordGameSDK\Constants.cs" />
-    <Compile Include="DiscordGameSDK\Core.cs" />
-    <Compile Include="DiscordGameSDK\ImageManager.cs" />
-    <Compile Include="DiscordGameSDK\LobbyManager.cs" />
-    <Compile Include="DiscordGameSDK\StorageManager.cs" />
-    <Compile Include="DiscordGameSDK\StoreManager.cs" />
-    <Compile Include="Game\TriggerType.cs" />
-    <Compile Include="Game\GameTrigger.cs" />
-    <Compile Include="IO\json\RiderData.cs" />
-    <Compile Include="IO\TriggerConverter.cs" />
     <Compile Include="MainWindow.cs" />
     <Compile Include="GameCanvas.cs" />
     <Compile Include="Editor.cs" />
@@ -84,12 +66,25 @@
     <Compile Include="Drawing\GenericVAO.cs" />
     <Compile Include="Drawing\GLEnableCap.cs" />
     <Compile Include="Drawing\KnobState.cs" />
-    <Compile Include="Drawing\Models.cs" />
+    <Compile Include="Drawing\RiderModel\Models.cs" />
     <Compile Include="Drawing\LineVertex.cs" />
     <Compile Include="Drawing\MsaaFbo.cs" />
     <Compile Include="Drawing\SafeFrameBuffer.cs" />
     <Compile Include="Drawing\Shader.cs" />
     <Compile Include="Drawing\Shaders.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Drawing\RiderModel\Filenames.cs" />
+    <Compile Include="Drawing\RiderModel\ModelLoader.cs" />
+    <Compile Include="Drawing\RiderModel\ModelLoaderLegacy.cs" />
+    <Compile Include="Drawing\RiderModel\RegionsCache.cs" />
+    <Compile Include="Drawing\RiderModel\ModelLoaderDynamic.cs" />
+    <Compile Include="Drawing\RiderModel\Resources.cs" />
+    <Compile Include="Drawing\RiderModel\ResourcesCustom.cs" />
+    <Compile Include="Drawing\RiderModel\ResourcesDefault.cs" />
+    <Compile Include="Drawing\RiderModel\ScarfColors.cs" />
+    <Compile Include="Drawing\RiderModel\ScarfLoader.cs" />
+    <Compile Include="Drawing\RiderModel\RiderLoader.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Rendering\GameDrawingMatrix.cs" />
@@ -122,6 +117,8 @@
     <Compile Include="Game\Camera\CameraEntry.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Game\TriggerType.cs" />
+    <Compile Include="Game\GameTrigger.cs" />
     <Compile Include="Game\EditorCell.cs" />
     <Compile Include="Game\EditorGrid.cs" />
     <Compile Include="Game\FPSCounter.cs" />
@@ -152,11 +149,12 @@
   <ItemGroup>
     <Compile Include="Tools\CurrentTools.cs" />
     <Compile Include="Tools\EraserTool.cs" />
-    <Compile Include="Tools\HandTool.cs" />
+    <Compile Include="Tools\PanTool.cs" />
     <Compile Include="Tools\BezierTool.cs" />
     <Compile Include="Tools\LineTool.cs" />
-    <Compile Include="Tools\MoveTool.cs" />
     <Compile Include="Tools\SelectTool.cs" />
+    <Compile Include="Tools\SmoothPencilTool.cs" />
+    <Compile Include="Tools\SelectSubtool.cs" />
     <Compile Include="Tools\LineSelection.cs" />
     <Compile Include="Tools\PencilTool.cs" />
     <Compile Include="Tools\SharedSwatches.cs" />
@@ -166,14 +164,12 @@
   <ItemGroup>
     <Compile Include="IO\ffmpeg\FFMPEG.cs" />
     <Compile Include="IO\ffmpeg\FFMPEGParameters.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="IO\BigEndianReader.cs" />
-    <Compile Include="IO\BigEndianWriter.cs" />
     <Compile Include="IO\SOL\Amf0.cs" />
     <Compile Include="IO\SOL\Amf0Object.cs" />
     <Compile Include="IO\SOL\sol_track.cs" />
     <Compile Include="IO\SOL\SOLFile.cs" />
+    <Compile Include="IO\BigEndianReader.cs" />
+    <Compile Include="IO\BigEndianWriter.cs" />
     <Compile Include="IO\SOLLoader.cs" />
     <Compile Include="IO\SOLWriter.cs" />
     <Compile Include="IO\TrackIO.cs" />
@@ -183,6 +179,7 @@
     <Compile Include="IO\TrackSave.cs" />
     <Compile Include="IO\TRKLoader.cs" />
     <Compile Include="IO\TRKWriter.cs" />
+    <Compile Include="IO\TriggerConverter.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IO\json\JSONLoader.cs" />
@@ -190,12 +187,22 @@
     <Compile Include="IO\json\line_json.cs" />
     <Compile Include="IO\json\LZString.cs" />
     <Compile Include="IO\json\track_json.cs" />
+    <Compile Include="IO\json\RiderData.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="UI\Dialogs\ChangelogWindow.cs" />
-    <Compile Include="UI\Dialogs\ScreenshotWindow.cs" />
-    <Compile Include="UI\Dialogs\GeneratorWindow.cs" />
-    <Compile Include="UI\Dialogs\TriggerWindow.cs" />
+    <Compile Include="Addons\AddonManager.cs" />
+    <Compile Include="Addons\BaseAddon.cs" />
+    <Compile Include="Addons\MagicAnimator.cs" />
+    <Compile Include="Addons\LineGenerator\Generator.cs" />
+    <Compile Include="Addons\LineGenerator\GeneratorType.cs" />
+    <Compile Include="Addons\LineGenerator\CircleGenerator.cs" />
+    <Compile Include="Addons\LineGenerator\TenPCGenerator.cs" />
+    <Compile Include="Addons\LineGenerator\LineGenerator.cs" />
+    <Compile Include="Addons\LineGenerator\KramualGenerator.cs" />
+    <Compile Include="Addons\Coordinates.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="UI\CursorsHandler.cs" />
     <Compile Include="UI\PlatformImpl.cs" />
     <Compile Include="UI\Hotkey.cs" />
     <Compile Include="UI\Fonts.cs" />
@@ -216,34 +223,48 @@
     <Compile Include="UI\Dialogs\SaveWindow.cs" />
     <Compile Include="UI\Dialogs\TrackInfoWindow.cs" />
     <Compile Include="UI\Dialogs\RebindHotkeyWindow.cs" />
+    <Compile Include="UI\Dialogs\ChangelogWindow.cs" />
+    <Compile Include="UI\Dialogs\ScreenshotWindow.cs" />
+    <Compile Include="UI\Dialogs\GeneratorWindow.cs" />
+    <Compile Include="UI\Dialogs\TriggerWindow.cs" />
+    <Compile Include="UI\Dialogs\UserFolderTransferrerWindow.cs" />
+    <Compile Include="UI\Dialogs\TimelineEditorWindow.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="UI\Widgets\WidgetContainer.cs" />
-    <Compile Include="UI\Widgets\HotkeyWidget.cs" />
-    <Compile Include="UI\Widgets\TrackLabel.cs" />
-    <Compile Include="UI\Widgets\Sprite.cs" />
+    <Compile Include="UI\Components\TrackLabel.cs" />
+    <Compile Include="UI\Components\Sprite.cs" />
+    <Compile Include="UI\Components\ImageButton.cs" />
+    <Compile Include="UI\Components\WidgetContainer.cs" />
+    <Compile Include="UI\Components\MultiSlider.cs" />
+    <Compile Include="UI\Components\MultiToolButton.cs" />
+    <Compile Include="UI\Components\Playhead.cs" />
+    <Compile Include="UI\Components\WidgetButton.cs" />
+    <Compile Include="UI\Components\ToolButton.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="UI\Widgets\Preferences\HotkeysEditor.cs" />
+    <Compile Include="UI\Widgets\InfoBarCoords.cs" />
     <Compile Include="UI\Widgets\LoadingSprite.cs" />
-    <Compile Include="UI\Widgets\TrackInfoBar.cs" />
-    <Compile Include="UI\Widgets\RightInfoBar.cs" />
-    <Compile Include="UI\Widgets\ColorSwatch.cs" />
-    <Compile Include="UI\Widgets\SwatchColorButton.cs" />
-    <Compile Include="UI\Widgets\TimelineWidget.cs" />
-    <Compile Include="UI\Widgets\ImageButton.cs" />
+    <Compile Include="UI\Widgets\InfoBarLeft.cs" />
+    <Compile Include="UI\Widgets\InfoBarRight.cs" />
+    <Compile Include="UI\Widgets\TimelineBar.cs" />
     <Compile Include="UI\Widgets\Toolbar.cs" />
-    <Compile Include="UI\Widgets\Playhead.cs" />
-    <Compile Include="UI\Widgets\PlayheadMarker.cs" />
-    <Compile Include="UI\Widgets\ZoomSlider.cs" />
+    <Compile Include="UI\Widgets\SwatchBar.cs" />
+    <Compile Include="UI\Widgets\ZoomBar.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Utils\Angle.cs" />
     <Compile Include="Utils\Benchmark.cs" />
     <Compile Include="Utils\AutoArray.cs" />
+    <Compile Include="Utils\Debouncer.cs" />
     <Compile Include="Utils\DoubleRect.cs" />
     <Compile Include="Utils\Constants.cs" />
     <Compile Include="Utils\AsyncTask.cs" />
     <Compile Include="Utils\FloatRect.cs" />
+    <Compile Include="Utils\GaussianBlur.cs" />
     <Compile Include="Utils\ResourceSync.cs" />
     <Compile Include="Utils\Line.cs" />
+    <Compile Include="Utils\RoundedSquareTexture.cs" />
     <Compile Include="Utils\Turtle.cs" />
     <Compile Include="Utils\Utility.cs" />
     <Compile Include="Utils\RectLRTB.cs" />
@@ -251,83 +272,66 @@
     <Compile Include="Utils\Settings.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="NVorbis, Version=0.8.5.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\NVorbis.0.8.5.0\lib\NVorbis.dll</HintPath>
-    </Reference>
-    <Reference Include="OpenTK, Version=2.0.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
-      <HintPath>packages\OpenTK.2.0.0\lib\net20\OpenTK.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Net" />
-    <Reference Include="System.IO.Compression.dll" />
-    <Reference Include="System.IO.Compression.FileSystem.dll" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Runtime.CompilerServices.Unsafe">
-      <HintPath>packages\System.Runtime.CompilerServices.Unsafe.4.4.0\lib\netstandard1.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Threading.Tasks.Extensions">
-      <HintPath>packages\System.Threading.Tasks.Extensions.4.4.0\lib\portable-net45+win8+wp8+wpa81\System.Threading.Tasks.Extensions.dll</HintPath>
-    </Reference>
-    <Reference Include="System.ValueTuple">
-      <HintPath>packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-    </Reference>
-    <Reference Include="Utf8Json">
-      <HintPath>Utf8Json.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Resources\beep.wav" />
     <EmbeddedResource Include="Resources\DefaultColors.xml" />
     <EmbeddedResource Include="Resources\DefaultSkin.png" />
     <EmbeddedResource Include="Resources\icon.ico" />
-    <EmbeddedResource Include="Resources\loading.png" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\icons\swatch.png" />
-    <EmbeddedResource Include="Resources\icons\erasertool.png" />
-    <EmbeddedResource Include="Resources\icons\fast-forward.png" />
-    <EmbeddedResource Include="Resources\icons\flag.png" />
-    <EmbeddedResource Include="Resources\icons\flag_invalid.png" />
-    <EmbeddedResource Include="Resources\icons\movetool.png" />
-    <EmbeddedResource Include="Resources\icons\linetool.png" />
-    <EmbeddedResource Include="Resources\icons\menu.png" />
-    <EmbeddedResource Include="Resources\icons\pantool.png" />
-    <EmbeddedResource Include="Resources\icons\pause.png" />
-    <EmbeddedResource Include="Resources\icons\penciltool.png" />
-    <EmbeddedResource Include="Resources\icons\play.png" />
-    <EmbeddedResource Include="Resources\icons\rewind.png" />
-    <EmbeddedResource Include="Resources\icons\stop.png" />
+    <EmbeddedResource Include="Resources\icons\tool_pencil.svg" />
+    <EmbeddedResource Include="Resources\icons\tool_smooth_pencil.svg" />
+    <EmbeddedResource Include="Resources\icons\tool_line.svg" />
+    <EmbeddedResource Include="Resources\icons\tool_bezier.svg" />
+    <EmbeddedResource Include="Resources\icons\tool_eraser.svg" />
+    <EmbeddedResource Include="Resources\icons\tool_select.svg" />
+    <EmbeddedResource Include="Resources\icons\tool_pan.svg" />
+    <EmbeddedResource Include="Resources\icons\play.svg" />
+    <EmbeddedResource Include="Resources\icons\pause.svg" />
+    <EmbeddedResource Include="Resources\icons\stop.svg" />
+    <EmbeddedResource Include="Resources\icons\flag.svg" />
+    <EmbeddedResource Include="Resources\icons\generators.svg" />
+    <EmbeddedResource Include="Resources\icons\menu.svg" />
+    <EmbeddedResource Include="Resources\icons\reset_camera.svg" />
+    <EmbeddedResource Include="Resources\icons\slowdown.svg" />
+    <EmbeddedResource Include="Resources\icons\speedup.svg" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\ux\flagmarker.png" />
-    <EmbeddedResource Include="Resources\ux\playheadmarker.png" />
-    <EmbeddedResource Include="Resources\ux\cameraneedreset.png" />
+    <EmbeddedResource Include="Resources\ux\loading.svg" />
+    <EmbeddedResource Include="Resources\ux\swatch.svg" />
+    <EmbeddedResource Include="Resources\ux\swatch_active.svg" />
+    <EmbeddedResource Include="Resources\ux\tool_background.svg" />
+    <EmbeddedResource Include="Resources\ux\multitool_indicator.svg" />
+    <EmbeddedResource Include="Resources\ux\slider_background.svg" />
+    <EmbeddedResource Include="Resources\ux\playhead_main.svg" />
+    <EmbeddedResource Include="Resources\ux\playhead_flag.svg" />
+    <EmbeddedResource Include="Resources\ux\playhead_limiter.svg" />
+    <EmbeddedResource Include="Resources\ux\playhead_defaultzoom.svg" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\cursors\closed_move.png" />
-    <EmbeddedResource Include="Resources\cursors\hand.png" />
-    <EmbeddedResource Include="Resources\cursors\eraser.png" />
-    <EmbeddedResource Include="Resources\cursors\line.png" />
-    <EmbeddedResource Include="Resources\cursors\move.png" />
-    <EmbeddedResource Include="Resources\cursors\pencil.png" />
-    <EmbeddedResource Include="Resources\cursors\select.png" />
-    <EmbeddedResource Include="Resources\cursors\size_bdiag.png" />
-    <EmbeddedResource Include="Resources\cursors\size_fdiag.png" />
-    <EmbeddedResource Include="Resources\cursors\size_ver.png" />
-    <EmbeddedResource Include="Resources\cursors\size_hor.png" />
-    <EmbeddedResource Include="Resources\cursors\default.png" />
-    <EmbeddedResource Include="Resources\cursors\size_all.png" />
-    <EmbeddedResource Include="Resources\cursors\zoom.png" />
-    <EmbeddedResource Include="Resources\cursors\ibeam.png" />
+    <EmbeddedResource Include="Resources\cursors\pencil.svg" />
+    <EmbeddedResource Include="Resources\cursors\default.svg" />
+    <EmbeddedResource Include="Resources\cursors\eraser.svg" />
+    <EmbeddedResource Include="Resources\cursors\select.svg" />
+    <EmbeddedResource Include="Resources\cursors\zoom.svg" />
+    <EmbeddedResource Include="Resources\cursors\size-we.svg" />
+    <EmbeddedResource Include="Resources\cursors\size-ns.svg" />
+    <EmbeddedResource Include="Resources\cursors\size-nwse.svg" />
+    <EmbeddedResource Include="Resources\cursors\size-swne.svg" />
+    <EmbeddedResource Include="Resources\cursors\drag-active.svg" />
+    <EmbeddedResource Include="Resources\cursors\drag-inactive.svg" />
+    <EmbeddedResource Include="Resources\cursors\hand.svg" />
+    <EmbeddedResource Include="Resources\cursors\beam.svg" />
+    <EmbeddedResource Include="Resources\cursors\line.svg" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\rider\body.png" />
     <EmbeddedResource Include="Resources\rider\bodydead.png" />
     <EmbeddedResource Include="Resources\rider\sled.png" />
-    <EmbeddedResource Include="Resources\rider\brokensled.png" />
+    <EmbeddedResource Include="Resources\rider\sledbroken.png" />
     <EmbeddedResource Include="Resources\rider\arm.png" />
     <EmbeddedResource Include="Resources\rider\leg.png" />
+    <EmbeddedResource Include="Resources\rider\rope.png" />
+    <EmbeddedResource Include="Resources\rider\.regions" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\fonts\liberation_sans_15_0.png" />
@@ -346,6 +350,59 @@
     <EmbeddedResource Include="Resources\shaders\simgrid.vert" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="ExCSS, Version=4.1.4.0, Culture=neutral, PublicKeyToken=bdbe16be9b936b9a, processorArchitecture=MSIL">
+      <HintPath>packages\ExCSS.4.1.4\lib\net452\ExCSS.dll</HintPath>
+    </Reference>
+    <Reference Include="Fizzler, Version=1.2.1.0, Culture=neutral, PublicKeyToken=4ebff4844e382110, processorArchitecture=MSIL">
+      <HintPath>packages\Fizzler.1.2.1\lib\netstandard2.0\Fizzler.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="NVorbis, Version=0.8.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\NVorbis.0.8.5.0\lib\NVorbis.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenTK, Version=2.0.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
+      <HintPath>packages\OpenTK.2.0.0\lib\net20\OpenTK.dll</HintPath>
+    </Reference>
+    <Reference Include="Svg, Version=3.4.0.0, Culture=neutral, PublicKeyToken=12a0bac221edeae2, processorArchitecture=MSIL">
+      <HintPath>packages\Svg.3.4.4\lib\net462\Svg.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net" />
+    <Reference Include="System.IO.Compression.dll" />
+    <Reference Include="System.IO.Compression.FileSystem.dll" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.4.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>packages\System.Runtime.CompilerServices.Unsafe.4.5.3\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Utf8Json">
+      <HintPath>Utf8Json.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="packages.config" />
     <None Include="Properties\app.manifest" />
     <None Include="Properties\OpenTK.dll.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -362,7 +419,6 @@
     <None Include="openal32.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\lib\gwen-lra\Gwen\Gwen.csproj">
@@ -374,8 +430,51 @@
       <Name>Gwen.Renderer.OpenTK</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\icons\beziertool.png" />
-  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- ### Process LRO version and read latest changelog file ### -->
+  <Target Name="Build" Condition="'$(_InvalidConfigurationWarning)' != 'true'" DependsOnTargets="$(BuildDependsOn)" Returns="$(TargetPath)">
+    <!-- Run "CleanUp" even after build fail -->
+    <OnError ExecuteTargets="CleanUp" />
+  </Target>
+  <ItemGroup>
+    <VersionFile Include="..\version" />
+    <AssemblyGeneratedInfoFile Include="$(MSBuildProjectDirectory)\Properties\AssemblyGeneratedInfo.cs" />
+  </ItemGroup>
+  <Target Name="BeforeBuild">
+    <!-- Read AssemblyInformationalVersion -->
+    <PropertyGroup>
+      <FilePath>$(MSBuildProjectDirectory)\Properties\AssemblyInfo.cs</FilePath>
+      <AssemblyInfoLines>$([System.IO.File]::ReadAllText('$(FilePath)'))</AssemblyInfoLines>
+      <Pattern>\[assembly: AssemblyInformationalVersion\("(?&lt;Version&gt;\d+\.\d+\.\d+\.\d+)(?&lt;SubVersion&gt;[\s0-9A-Za-z-.]+)?</Pattern>
+      <AssemblyVersion>$([System.Text.RegularExpressions.Regex]::Match($(AssemblyInfoLines), $(Pattern), System.Text.RegularExpressions.RegexOptions.Multiline).Groups["Version"].Value)</AssemblyVersion>
+      <AssemblySubVersion>$([System.Text.RegularExpressions.Regex]::Match($(AssemblyInfoLines), $(Pattern), System.Text.RegularExpressions.RegexOptions.Multiline).Groups["SubVersion"].Value)</AssemblySubVersion>
+    </PropertyGroup>
+    <!-- Export version to "..\version" -->
+    <WriteLinesToFile File="@(VersionFile)" Lines="$(AssemblyVersion)" Overwrite="true" />
+    <!-- Read changelog file -->
+    <PropertyGroup>
+      <FilePath>..\Changelogs\$(AssemblyVersion).md</FilePath>
+      <ChangelogLines>$([System.IO.File]::ReadAllText('$(FilePath)'))</ChangelogLines>
+    </PropertyGroup>
+    <!-- Generate some assembly fields (AssemblyFileVersion and SubVersion) -->
+    <ItemGroup>
+      <AssemblyAttributes Include="AssemblyFileVersion">
+        <_Parameter1>$(AssemblyVersion)</_Parameter1>
+      </AssemblyAttributes>
+      <AssemblyAttributes Include="linerider.CustomAttributes">
+        <_Parameter1>$(AssemblySubVersion)</_Parameter1>
+        <_Parameter2>$(ChangelogLines)</_Parameter2>
+      </AssemblyAttributes>
+    </ItemGroup>
+    <!-- Generate a file with extra assembly fields from above -->
+    <WriteCodeFragment AssemblyAttributes="@(AssemblyAttributes)" Language="C#" OutputFile="@(AssemblyGeneratedInfoFile)">
+      <Output TaskParameter="OutputFile" ItemName="Compile" />
+      <Output TaskParameter="OutputFile" ItemName="FileWrites" />
+    </WriteCodeFragment>
+  </Target>
+  <Target Name="CleanUp" AfterTargets="AfterBuild">
+    <!-- Cleanup after build -->
+    <Delete Files="@(AssemblyGeneratedInfoFile)" />
+  </Target>
+  <!-- ### Process LRO version and read latest changelog file ### -->
 </Project>

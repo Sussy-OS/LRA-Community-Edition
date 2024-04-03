@@ -1,7 +1,6 @@
-using System;
-using System.Collections.Generic;
 using linerider.Game;
 using OpenTK;
+using System.Collections.Generic;
 
 namespace linerider.Tools
 {
@@ -61,14 +60,11 @@ namespace linerider.Tools
         {
             line = Line;
             clone = line.Clone();
-            joint1 = line.Position == snapjoint;
+            joint1 = line.Position1 == snapjoint;
             joint2 = line.Position2 == snapjoint;
             snapped = new List<LineSelection>();
         }
 
-        public LineType GetLineType()
-        {
-            return line.Type;
-        }
+        public LineType GetLineType() => line.Type;
     }
 }

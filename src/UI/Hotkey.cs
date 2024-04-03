@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 namespace linerider.UI
 {
     public enum Hotkey
@@ -16,6 +14,7 @@ namespace linerider.UI
         EditorToolColor1,
         EditorToolColor2,
         EditorToolColor3,
+        EditorToolColor4,
         EditorRemoveLatestLine,
         EditorFocusStart,
         EditorFocusLastLine,
@@ -40,6 +39,11 @@ namespace linerider.UI
         ToolCut,
         ToolPaste,
         ToolDelete,
+        ToolCopyValues,
+        ToolPasteValues,
+        ToolSwitchRed,
+        ToolSwitchGreen,
+        ToolSwitchBlue,
         ToolAddSelection,
         ToolToggleSelection,
         ToolScaleAspectRatio,
@@ -51,7 +55,7 @@ namespace linerider.UI
         PlaybackStart,
         PlaybackStop,
         PlaybackFlag,
-        PlaybackSlowmo,
+        ToggleSlowmo,
         PlaybackZoom,
         PlaybackUnzoom,
         PlaybackSpeedUp,
@@ -64,9 +68,14 @@ namespace linerider.UI
         PlaybackForward,
         PlaybackBackward,
         PlaybackResetCamera,
+
         PreferenceOnionSkinning,
         PreferenceAllCheckboxSettings,
-        InvisibleRider,
+        PreferenceInvisibleRider,
+        PreferenceDrawDebugGrid,
+        PreferenceDrawDebugCamera,
+        TogglePreviewMode,
+        ToggleCameraLock,
 
         PreferencesWindow,
         GameMenuWindow,
@@ -76,14 +85,30 @@ namespace linerider.UI
         SaveAsWindow,
         TriggerMenuWindow,
         LineGeneratorWindow,
-        DrawDebugGrid,
-        DrawDebugCamera,
-
-        PlayButtonIgnoreFlag,
 
         MagicAnimateAdvanceFrame,
         MagicAnimateRecedeFrame,
-        MagicAnimateRecedeMultiFrame
-    }
+        MagicAnimateRecedeMultiFrame,
 
+        CopyX0,
+        CopyY0,
+        CopyX1,
+        CopyY1,
+        CopyX2,
+        CopyY2,
+        CopyX3,
+        CopyY3,
+        CopyX4,
+        CopyY4,
+        CopyX5,
+        CopyY5,
+        CopyX6,
+        CopyY6,
+        CopyX7,
+        CopyY7,
+        CopyX8,
+        CopyY8,
+        CopyX9,
+        CopyY9
+    }
 }

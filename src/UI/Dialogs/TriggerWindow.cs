@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using Gwen;
+﻿using Gwen;
 using Gwen.Controls;
-using linerider.Tools;
-using linerider.Utils;
-using linerider.IO;
 using linerider.Game;
+using linerider.Utils;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 
 namespace linerider.UI
 {
@@ -28,50 +25,29 @@ namespace linerider.UI
         private Spinner _zoomtarget;
 
         private ControlBase _bgoptions;
-        private Spinner _backgrondred;
-        private Spinner _backgrondgreen;
-        private Spinner _backgrondblue;
+        private ControlBase _bgtraget;
 
         private ControlBase _lineoptions;
-        private Spinner _linered;
-        private Spinner _linegreen;
-        private Spinner _lineblue;
-        
-        private int SliderFrames
-        {
-            get
-            {
-                return TriggerDuration + (FramePadding * 2);
-            }
-        }
-        private int TriggerDuration
-        {
-            get
-            {
-                return (int)(_spinnerDuration.Value);
-            }
-        }
-        private int SelectedTrigger
-        {
-            get
-            {
-                return _lbtriggers.SelectedRowIndex;
-            }
-        }
-        private List<GameTrigger> _triggers_copy = new List<GameTrigger>();
+        private ControlBase _linetarget;
+
+        private int SliderFrames => TriggerDuration + FramePadding * 2;
+        private int TriggerDuration => (int)_spinnerDuration.Value;
+        private int SelectedTrigger => _lbtriggers.SelectedRowIndex;
+        private readonly List<GameTrigger> _triggers_copy = new List<GameTrigger>();
         private GameTrigger _trigger_copy = null;
         private bool _changemade = false;
         private bool _closing = false;
-        public TriggerWindow(GameCanvas parent, Editor editor)
-        : base(parent, editor)
+        private readonly bool _shouldrevertpreview = false;
+
+        public TriggerWindow(GameCanvas parent, Editor editor) : base(parent, editor)
         {
             Title = "Timeline Triggers";
             Size = new Size(400, 340);
-            Padding = new Padding(0, 0, 0, 0);
+            Padding = Padding.Zero;
             MakeModal(true);
-            using (var trk = editor.CreateTrackWriter())
+            using (TrackWriter trk = editor.CreateTrackWriter())
             {
-                foreach (var trigger in trk.Triggers)
+                foreach (GameTrigger trigger in trk.Triggers)
                 {
                     _triggers_copy.Add(trigger.Clone());
                 }
@@ -80,8 +56,10 @@ namespace linerider.UI
             ToggleDisable(true);
             MinimumSize = new Size(250, MinimumSize.Height);
             DisableResizing();
-
+            _shouldrevertpreview = !Settings.PreviewMode;
+            Settings.PreviewMode = true;
         }
+
         protected override void CloseButtonPressed(
             ControlBase control,
             EventArgs args)
@@ -89,6 +67,8 @@ namespace linerider.UI
             if (_closing || !_changemade)
             {
                 _closing = true;
+                if (_shouldrevertpreview)
+                    Settings.PreviewMode = false;
                 base.CloseButtonPressed(control, args);
             }
             else
@@ -101,6 +81,8 @@ namespace linerider.UI
             if (_closing || !_changemade)
             {
                 _closing = true;
+                if (_shouldrevertpreview)
+                    Settings.PreviewMode = false;
                 return base.Close();
             }
             else
@@ -111,7 +93,7 @@ namespace linerider.UI
         }
         private void WarnClose()
         {
-            var mbox = MessageBox.Show(
+            MessageBox mbox = MessageBox.Show(
                 _canvas,
                 "The line has been modified. Do you want to save your changes?",
                 "Save Changes?",
@@ -125,34 +107,34 @@ namespace linerider.UI
                     case DialogResult.Yes:
                         FinishChange();
                         _closing = true;
-                        base.Close();
+                        _ = base.Close();
                         break;
                     case DialogResult.No:
                         CancelChange();
                         _closing = true;
-                        base.Close();
+                        _ = base.Close();
                         break;
                 }
             };
         }
         private GameTrigger BeginModifyTrigger(TrackWriter trk)
         {
-            var selected = SelectedTrigger;
+            int selected = SelectedTrigger;
             if (selected == -1)
                 return null;
-            var trigger = trk.Triggers[selected];
+            GameTrigger trigger = trk.Triggers[selected];
             _trigger_copy = trigger.Clone();
             return trigger;
         }
         private void EndModifyTrigger(GameTrigger trigger, TrackWriter trk)
         {
-            var selected = SelectedTrigger;
+            int selected = SelectedTrigger;
             if (selected == -1)
                 throw new Exception(
                     "SelectedTrigger was removed during ModifyTrigger");
 
             _changemade = true;
-            trigger.Start = (int)(_spinnerStart.Value);
+            trigger.Start = (int)_spinnerStart.Value;
             trigger.End = (int)(_spinnerStart.Value + _spinnerDuration.Value);
             trk.Triggers[SelectedTrigger] = trigger;
             _editor.Timeline.TriggerChanged(_trigger_copy, trigger);
@@ -162,7 +144,7 @@ namespace linerider.UI
         {
             _zoomoptions = new ControlBase(null)
             {
-                Margin = new Margin(0, 0, 0, 0),
+                Margin = Margin.Zero,
                 Dock = Dock.Fill
             };
             _zoomtarget = new Spinner(null)
@@ -175,9 +157,9 @@ namespace linerider.UI
             {
                 if (_selecting_trigger)
                     return;
-                using (var trk = _editor.CreateTrackWriter())
+                using (TrackWriter trk = _editor.CreateTrackWriter())
                 {
-                    var trigger = BeginModifyTrigger(trk);
+                    GameTrigger trigger = BeginModifyTrigger(trk);
                     if (trigger != null)
                     {
                         trigger.ZoomTarget = (float)_zoomtarget.Value;
@@ -191,155 +173,67 @@ namespace linerider.UI
         {
             _bgoptions = new ControlBase(null)
             {
-                Margin = new Margin(0, 0, 0, 0),
+                Margin = Margin.Zero,
                 Dock = Dock.Fill
             };
-            _backgrondred = new Spinner(null)
-            {
-                Min = 0,
-                Max = 255,
-                Value = 255, 
-            };
-            _backgrondred.ValueChanged += (o, e) =>
+
+            _bgtraget = GwenHelper.CreateLabeledColorInput(_bgoptions, "Background", Settings.Colors.ExportBg, (o, color) =>
             {
                 if (_selecting_trigger)
                     return;
-                using (var trk = _editor.CreateTrackWriter())
+                using (TrackWriter trk = _editor.CreateTrackWriter())
                 {
-                    var trigger = BeginModifyTrigger(trk);
+                    GameTrigger trigger = BeginModifyTrigger(trk);
                     if (trigger != null)
                     {
-                        trigger.backgroundRed = (int)_backgrondred.Value;
+                        trigger.backgroundRed = color.Value.R;
+                        trigger.backgroundGreen = color.Value.G;
+                        trigger.backgroundBlue = color.Value.B;
                         EndModifyTrigger(trigger, trk);
                     }
                 }
-            };
-            _backgrondgreen = new Spinner(null)
-            {
-                Min = 0,
-                Max = 255,
-                Value = 255, 
-            };
-            _backgrondgreen.ValueChanged += (o, e) =>
-            {
-                if (_selecting_trigger)
-                    return;
-                using (var trk = _editor.CreateTrackWriter())
-                {
-                    var trigger = BeginModifyTrigger(trk);
-                    if (trigger != null)
-                    {
-                        trigger.backgroundGreen = (int)_backgrondgreen.Value;
-                        EndModifyTrigger(trigger, trk);
-                    }
-                }
-            };
-            _backgrondblue = new Spinner(null)
-            {
-                Min = 0,
-                Max = 255,
-                Value = 255, 
-            };
-            _backgrondblue.ValueChanged += (o, e) =>
-            {
-                if (_selecting_trigger)
-                    return;
-                using (var trk = _editor.CreateTrackWriter())
-                {
-                    var trigger = BeginModifyTrigger(trk);
-                    if (trigger != null)
-                    {
-                        trigger.backgroundBlue = (int)_backgrondblue.Value;
-                        EndModifyTrigger(trigger, trk);
-                    }
-                }
-            };
-            GwenHelper.CreateLabeledControl(_bgoptions, "Background Blue", _backgrondblue).Dock = Dock.Bottom;
-            GwenHelper.CreateLabeledControl(_bgoptions, "Background Green", _backgrondgreen).Dock = Dock.Bottom;
-            GwenHelper.CreateLabeledControl(_bgoptions, "Background Red", _backgrondred).Dock = Dock.Bottom;
+            });
+
+            _bgtraget.Dock = Dock.Bottom;
         }
         private void SetupLine()
         {
             _lineoptions = new ControlBase(null)
             {
-                Margin = new Margin(0, 0, 0, 0),
+                Margin = Margin.Zero,
                 Dock = Dock.Fill
             };
-            _linered = new Spinner(null)
-            {
-                Min = 0,
-                Max = 255,
-                Value = 255,
-            };
-            _linered.ValueChanged += (o, e) =>
+
+            _linetarget = GwenHelper.CreateLabeledColorInput(_lineoptions, "Line", Settings.Colors.ExportLine, (o, color) =>
             {
                 if (_selecting_trigger)
                     return;
-                using (var trk = _editor.CreateTrackWriter())
+                using (TrackWriter trk = _editor.CreateTrackWriter())
                 {
-                    var trigger = BeginModifyTrigger(trk);
+                    GameTrigger trigger = BeginModifyTrigger(trk);
                     if (trigger != null)
                     {
-                        trigger.lineRed = (int)_linered.Value;
+                        trigger.lineRed = color.Value.R;
+                        trigger.lineGreen = color.Value.G;
+                        trigger.lineBlue = color.Value.B;
                         EndModifyTrigger(trigger, trk);
                     }
                 }
-            };
-            _linegreen = new Spinner(null)
-            {
-                Min = 0,
-                Max = 255,
-                Value = 255, 
-            };
-            _linegreen.ValueChanged += (o, e) =>
-            {
-                if (_selecting_trigger)
-                    return;
-                using (var trk = _editor.CreateTrackWriter())
-                {
-                    var trigger = BeginModifyTrigger(trk);
-                    if (trigger != null)
-                    {
-                        trigger.lineGreen = (int)_linegreen.Value;
-                        EndModifyTrigger(trigger, trk);
-                    }
-                }
-            };
-            _lineblue = new Spinner(null)
-            {
-                Min = 0,
-                Max = 255,
-                Value = 255, 
-            };
-            _lineblue.ValueChanged += (o, e) =>
-            {
-                if (_selecting_trigger)
-                    return;
-                using (var trk = _editor.CreateTrackWriter())
-                {
-                    var trigger = BeginModifyTrigger(trk);
-                    if (trigger != null)
-                    {
-                        trigger.lineBlue = (int)_lineblue.Value;
-                        EndModifyTrigger(trigger, trk);
-                    }
-                }
-            };
-            GwenHelper.CreateLabeledControl(_lineoptions, "Line Blue", _lineblue).Dock = Dock.Bottom;
-            GwenHelper.CreateLabeledControl(_lineoptions, "Line Green", _linegreen).Dock = Dock.Bottom;
-            GwenHelper.CreateLabeledControl(_lineoptions, "Line Red", _linered).Dock = Dock.Bottom;
+            });
+
+            _linetarget.Dock = Dock.Bottom;
         }
         private void SetupRight()
         {
             ControlBase rightcontainer = new ControlBase(this)
             {
-                Margin = new Margin(0, 0, 0, 0),
+                Margin = Margin.Zero,
                 Dock = Dock.Right,
                 AutoSizeToContents = true
             };
             ControlBase buttoncontainer = new ControlBase(rightcontainer)
             {
-                Margin = new Margin(0, 0, 0, 0),
+                Margin = Margin.Zero,
                 Dock = Dock.Bottom,
                 AutoSizeToContents = true,
                 Children =
@@ -363,19 +257,19 @@ namespace linerider.UI
                     }
                 }
             };
-            var save = buttoncontainer.FindChildByName("btnsave");
-            var cancel = buttoncontainer.FindChildByName("btncancel");
+            ControlBase save = buttoncontainer.FindChildByName("btnsave");
+            ControlBase cancel = buttoncontainer.FindChildByName("btncancel");
             save.Clicked += (o, e) =>
             {
                 FinishChange();
-                Close();
+                _ = Close();
             };
             cancel.Clicked += (o, e) =>
             {
                 CancelChange();
-                Close();
+                _ = Close();
             };
-            this._triggeroptions = new Panel(rightcontainer)
+            _triggeroptions = new Panel(rightcontainer)
             {
                 Dock = Dock.Fill,
                 Padding = Padding.Four,
@@ -391,7 +285,7 @@ namespace linerider.UI
                 rightcontainer, "Trigger Type:");
             _triggertype.Dock = Dock.Bottom;
 
-            var zoom = _triggertype.AddItem("Zoom", "", TriggerType.Zoom);
+            MenuItem zoom = _triggertype.AddItem("Zoom", "", TriggerType.Zoom);
             zoom.CheckChanged += (o, e) =>
             {
                 _triggeroptions.Children.Clear();
@@ -400,7 +294,7 @@ namespace linerider.UI
                 Debug.WriteLine("Changed to Zoom");
 
             };
-            var bgColor = _triggertype.AddItem("BG Color", "", TriggerType.BGChange); //Tran
+            MenuItem bgColor = _triggertype.AddItem("BG Color", "", TriggerType.BGChange); // Tran
             bgColor.CheckChanged += (o, e) =>
             {
                 _triggeroptions.Children.Clear();
@@ -408,7 +302,7 @@ namespace linerider.UI
                 triggerSelected = TriggerType.BGChange;
                 Debug.WriteLine("Changed to Background");
             };
-            var lineColor = _triggertype.AddItem("Line Color", "", TriggerType.LineColor); //Tran
+            MenuItem lineColor = _triggertype.AddItem("Line Color", "", TriggerType.LineColor); // Tran
             lineColor.CheckChanged += (o, e) =>
             {
                 _triggeroptions.Children.Clear();
@@ -422,13 +316,15 @@ namespace linerider.UI
         {
             ControlBase leftcontainer = new ControlBase(this)
             {
-                Margin = new Margin(0, 0, 0, 0),
+                Margin = Margin.Zero,
                 Dock = Dock.Left,
                 AutoSizeToContents = true,
             };
-            var panel = new ControlBase(leftcontainer);
-            panel.Width = 150;
-            panel.Height = 200;
+            ControlBase panel = new ControlBase(leftcontainer)
+            {
+                Width = 150,
+                Height = 200
+            };
             ControlBase topcontainer = new ControlBase(panel)
             {
                 Margin = new Margin(0, 3, 0, 3),
@@ -461,77 +357,77 @@ namespace linerider.UI
                 AutoSizeToContents = true,
 
             };
-            var add = topcontainer.FindChildByName("btnadd");
-            var delete = topcontainer.FindChildByName("btndelete");
+            ControlBase add = topcontainer.FindChildByName("btnadd");
+            ControlBase delete = topcontainer.FindChildByName("btndelete");
             add.Clicked += (o, e) =>
             {
                 GameTrigger trigger = null;
                 switch (triggerSelected)
                 {
-                    case (TriggerType.Zoom):
+                    case TriggerType.Zoom:
                         _triggeroptions.Children.Clear();
                         _zoomoptions.Parent = _triggeroptions;
                         trigger = new GameTrigger()
                         {
                             TriggerType = TriggerType.Zoom,
                             Start = _editor.Offset,
-                            End = _editor.Offset + 40,
+                            End = _editor.Offset + Settings.DefaultTriggerLength,
                             ZoomTarget = 4,
                         };
 
                         break;
-                    case (TriggerType.BGChange):
+                    case TriggerType.BGChange:
                         trigger = new GameTrigger()
                         {
                             TriggerType = TriggerType.BGChange,
                             Start = _editor.Offset,
-                            End = _editor.Offset + 40,
-                            backgroundRed = 255,
-                            backgroundGreen = 255,
-                            backgroundBlue = 255,
+                            End = _editor.Offset + Settings.DefaultTriggerLength,
+                            backgroundRed = Settings.Colors.ExportBg.R,
+                            backgroundGreen = Settings.Colors.ExportBg.G,
+                            backgroundBlue = Settings.Colors.ExportBg.B,
                         };
                         break;
-                    case (TriggerType.LineColor):
+                    case TriggerType.LineColor:
                         trigger = new GameTrigger()
                         {
                             TriggerType = TriggerType.LineColor,
                             Start = _editor.Offset,
-                            End = _editor.Offset + 40,
-                            lineRed = 255,
-                            lineGreen = 255,
-                            lineBlue = 255,
+                            End = _editor.Offset + Settings.DefaultTriggerLength,
+                            lineRed = Settings.Colors.ExportLine.R,
+                            lineGreen = Settings.Colors.ExportLine.G,
+                            lineBlue = Settings.Colors.ExportLine.B,
                         };
                         break;
-                    default: //Default to the zoom trigger if something goes wrong
+                    default: // Default to the zoom trigger if something goes wrong
                         trigger = new GameTrigger()
                         {
                             TriggerType = TriggerType.Zoom,
                             Start = _editor.Offset,
-                            End = _editor.Offset + 40,
+                            End = _editor.Offset + Settings.DefaultTriggerLength,
                             ZoomTarget = 4,
                         };
                         break;
                 }
 
                 _changemade = true;
-                using (var trk = _editor.CreateTrackWriter())
+                using (TrackWriter trk = _editor.CreateTrackWriter())
                 {
                     trk.Triggers.Add(trigger);
                     _editor.Timeline.TriggerChanged(trigger, trigger);
                     UpdateFrame();
                 }
                 ToggleDisable(false);
-                _lbtriggers.AddRow(GetTriggerLabel(trigger), "", trigger);
+                _ = _lbtriggers.AddRow(GetTriggerLabel(trigger), "", trigger);
                 _lbtriggers.SelectByUserData(trigger);
             };
             delete.Clicked += (o, e) =>
             {
-                var row = _lbtriggers.SelectedRow;
+                ListBoxRow row = _lbtriggers.SelectedRow;
                 if (row != null)
                 {
-                    var trigger = (GameTrigger)(row.UserData);
+                    GameTrigger trigger = (GameTrigger)row.UserData;
                     _changemade = true;
-                    using (var trk = _editor.CreateTrackWriter())
+                    using (TrackWriter trk = _editor.CreateTrackWriter())
                     {
                         try
                         {
@@ -541,7 +437,7 @@ namespace linerider.UI
                         catch { /*Do nothing*/ }
                         UpdateFrame();
                     }
-                    _lbtriggers.Children.Remove(row);
+                    _ = _lbtriggers.Children.Remove(row);
                     ToggleDisable(true);
                 }
             };
@@ -552,7 +448,7 @@ namespace linerider.UI
             };
             ControlBase spinnerContainer = new ControlBase(leftcontainer)
             {
-                Margin = new Margin(0, 0, 0, 0),
+                Margin = Margin.Zero,
                 Padding = new Padding(0, 0, 50, 0),
                 Dock = Dock.Bottom,
                 AutoSizeToContents = true
@@ -563,15 +459,15 @@ namespace linerider.UI
                 Min = 1,
                 Max = int.MaxValue - 1,
                 Value = _editor.Offset
-                //TODO set values
+                // TODO set values
             };
             _spinnerDuration = new Spinner(null)
             {
                 OnlyWholeNumbers = true,
                 Min = 0,
-                Max = int.MaxValue - 1, //Yeah I'm crazy for wanting a more than 2 min trigger
+                Max = int.MaxValue - 1, // Yeah I'm crazy for wanting a more than 2 min trigger
                 Value = 0
-                //TODO set values
+                // TODO set values
             };
             _spinnerStart.ValueChanged += OnTriggerTimeChanged;
             _spinnerDuration.ValueChanged += OnTriggerTimeChanged;
@@ -584,20 +480,19 @@ namespace linerider.UI
                 "Start:",
                 _spinnerStart).Dock = Dock.Bottom;
 
-
             _lbtriggers.RowSelected += OnTriggerSelected;
         }
         private void OnTriggerTimeChanged(object o, EventArgs e)
         {
             if (_selecting_trigger)
                 return;
-            using (var trk = _editor.CreateTrackWriter())
+            using (TrackWriter trk = _editor.CreateTrackWriter())
             {
-                var trigger = BeginModifyTrigger(trk);
+                GameTrigger trigger = BeginModifyTrigger(trk);
                 if (trigger != null)
                 {
                     EndModifyTrigger(trigger, trk);
-                    var selected = _lbtriggers.SelectedRow;
+                    ListBoxRow selected = _lbtriggers.SelectedRow;
                     selected.Text = GetTriggerLabel(trigger);
                     selected.UserData = trigger;
                 }
@@ -621,7 +516,7 @@ namespace linerider.UI
             {
                 ToggleDisable(false);
             }
-            var trigger = (GameTrigger)e.SelectedItem.UserData;
+            GameTrigger trigger = (GameTrigger)e.SelectedItem.UserData;
             try
             {
                 _selecting_trigger = true;
@@ -631,6 +526,7 @@ namespace linerider.UI
                 switch (trigger.TriggerType)
                 {
                     case TriggerType.Zoom:
+                    {
                         _triggeroptions.Children.Clear();
                         _zoomoptions.Parent = _triggeroptions;
                         Debug.WriteLine("Changed to Zoom");
@@ -638,26 +534,40 @@ namespace linerider.UI
                         _zoomtarget.Value = trigger.ZoomTarget;
                         triggerSelected = TriggerType.Zoom;
                         break;
+                    }
                     case TriggerType.BGChange:
+                    {
                         _triggeroptions.Children.Clear();
                         _bgoptions.Parent = _triggeroptions;
                         Debug.WriteLine("Changed to Background");
 
-                        _backgrondred.Value = trigger.backgroundRed;
-                        _backgrondgreen.Value = trigger.backgroundGreen;
-                        _backgrondblue.Value = trigger.backgroundBlue;
+                        // (!) Temporary solution, will be remade later
+                        TextBox bgField = (TextBox)_bgtraget.FindChildByName("input");
+                        GwenHelper.ColorIndicator bgPreview = (GwenHelper.ColorIndicator)_bgtraget.FindChildByName("preview");
+                        Color color = Color.FromArgb(trigger.backgroundRed, trigger.backgroundGreen, trigger.backgroundBlue);
+
+                        bgField.Text = $"{color.R:X2}{color.G:X2}{color.B:X2}";
+                        bgPreview.Color = color;
+
                         triggerSelected = TriggerType.BGChange;
                         break;
+                    }
                     case TriggerType.LineColor:
+                    {
                         _triggeroptions.Children.Clear();
                         _lineoptions.Parent = _triggeroptions;
                         Debug.WriteLine("Changed to Line");
 
-                        _linered.Value = trigger.lineRed;
-                        _linegreen.Value = trigger.lineGreen;
-                        _lineblue.Value = trigger.lineBlue;
+                        // (!) Temporary solution, will be remade later
+                        TextBox lineField = (TextBox)_linetarget.FindChildByName("input");
+                        GwenHelper.ColorIndicator linePreview = (GwenHelper.ColorIndicator)_bgtraget.FindChildByName("preview");
+                        Color color = Color.FromArgb(trigger.lineRed, trigger.lineGreen, trigger.lineBlue);
+
+                        lineField.Text = $"{color.R:X2}{color.G:X2}{color.B:X2}";
+                        linePreview.Color = color;
                         triggerSelected = TriggerType.LineColor;
                         break;
+                    }
                     /* Add more triggers here */
                     default:
                         break;
@@ -669,15 +579,12 @@ namespace linerider.UI
             }
             UpdateFrame();
         }
-        private void OnSliderValueChanged(object o, EventArgs e)
-        {
-            UpdateFrame();
-        }
+        private void OnSliderValueChanged(object o, EventArgs e) => UpdateFrame();
         private void Setup()
         {
             ControlBase bottomcontainer = new ControlBase(this)
             {
-                Margin = new Margin(0, 0, 0, 0),
+                Margin = Margin.Zero,
                 Dock = Dock.Bottom,
                 AutoSizeToContents = true
             };
@@ -694,18 +601,18 @@ namespace linerider.UI
         }
         private void Populate()
         {
-            using (var trk = _editor.CreateTrackWriter())
+            using (TrackWriter trk = _editor.CreateTrackWriter())
             {
-                foreach (var trigger in trk.Triggers)
+                foreach (GameTrigger trigger in trk.Triggers)
                 {
-                    _lbtriggers.AddRow(
+                    _ = _lbtriggers.AddRow(
                         GetTriggerLabel(trigger), string.Empty, trigger);
                 }
             }
         }
         private string GetTriggerLabel(GameTrigger trigger)
         {
-            string typelabel = "";
+            string typelabel;
             switch (trigger.TriggerType)
             {
                 case TriggerType.Zoom:
@@ -726,9 +633,9 @@ namespace linerider.UI
 
         private void UpdateFrame()
         {
-            var start = Math.Max(_spinnerStart.Value - FramePadding, 0);
-            var end = (_spinnerStart.Value + _spinnerDuration.Value + FramePadding);
-            var frame = (int)(start + (end - start) * _slider.Value);
+            double start = Math.Max(_spinnerStart.Value - FramePadding, 0);
+            double end = _spinnerStart.Value + _spinnerDuration.Value + FramePadding;
+            int frame = (int)(start + (end - start) * _slider.Value);
             _editor.UseUserZoom = false;
             _editor.SetFrame(frame);
             _editor.UpdateCamera();
@@ -737,14 +644,14 @@ namespace linerider.UI
         {
             if (_changemade)
             {
-                using (var trk = _editor.CreateTrackWriter())
+                using (TrackWriter trk = _editor.CreateTrackWriter())
                 {
-                    var triggers = trk.Triggers;
+                    List<GameTrigger> toadd = new List<GameTrigger>();
 
-                    foreach (var oldtrigger in _triggers_copy)
+                    foreach (GameTrigger oldtrigger in _triggers_copy)
                     {
                         bool match = false;
-                        foreach (var newtrigger in triggers)
+                        foreach (GameTrigger newtrigger in trk.Triggers)
                         {
                             if (oldtrigger.CompareTo(newtrigger))
                             {
@@ -753,19 +660,50 @@ namespace linerider.UI
                         }
                         if (!match)
                         {
-                            _editor.Timeline.TriggerChanged(oldtrigger, oldtrigger);
+                            toadd.Add(oldtrigger);
                         }
                     }
-                    trk.Triggers = _triggers_copy;
+
+                    foreach (GameTrigger trigger in toadd)
+                    {
+                        trk.Triggers.Add(trigger);
+                        _editor.Timeline.TriggerChanged(trigger, trigger);
+                        UpdateFrame();
+                    }
+
+                    List<GameTrigger> toremove = new List<GameTrigger>();
+
+                    foreach (GameTrigger newtrigger in trk.Triggers)
+                    {
+                        bool match = false;
+                        foreach (GameTrigger oldtrigger in _triggers_copy)
+                        {
+                            if (oldtrigger.CompareTo(newtrigger))
+                            {
+                                match = true;
+                            }
+                        }
+                        if (!match)
+                        {
+                            toremove.Add(newtrigger);
+                        }
+                    }
+
+                    foreach (GameTrigger trigger in toremove)
+                    {
+                        _ = trk.Triggers.Remove(trigger);
+                        _editor.Timeline.TriggerChanged(trigger, trigger);
+                        UpdateFrame();
+                    }
                 }
                 _changemade = false;
             }
         }
         private void FinishChange()
         {
-            using (var trk = _editor.CreateTrackWriter())
+            using (TrackWriter trk = _editor.CreateTrackWriter())
             {
-                var triggers = trk.Triggers;
+                List<GameTrigger> triggers = trk.Triggers;
                 if (_changemade)
                 {
                     _changemade = false;

@@ -9,7 +9,8 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Gwen</RootNamespace>
     <AssemblyName>Gwen</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -111,6 +112,8 @@
     <Compile Include="Controls\MenuItem.cs" />
     <Compile Include="Controls\MenuStrip.cs" />
     <Compile Include="Controls\Spinner.cs" />
+    <Compile Include="Controls\SpinnerG17.cs" />
+
     <Compile Include="ControlInternal\RadioButtonButton.cs" />
     <Compile Include="Controls\RadioButtonGroup.cs" />
     <Compile Include="Controls\ScrollControl.cs" />
@@ -121,6 +124,7 @@
     <!-- <Compile Include="Controls\TabTitleBar.cs" /> -->
     <Compile Include="Controls\TextBox.cs" />
     <Compile Include="Controls\TextBoxNumeric.cs" />
+    <Compile Include="Controls\TextBoxNumericG17.cs" />
     <Compile Include="Controls\TextBoxPassword.cs" />
     <Compile Include="Controls\TreeControl.cs" />
     <Compile Include="Controls\TreeNode.cs" />
@@ -162,9 +166,7 @@
   <ItemGroup>
     <Content Include="readme.txt" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Controls\ControlBase\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>

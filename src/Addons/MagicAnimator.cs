@@ -1,12 +1,8 @@
 ﻿using linerider.Game;
 using linerider.Tools;
-using linerider.Utils;
 using OpenTK;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace linerider.Addons
 {
@@ -19,7 +15,7 @@ namespace linerider.Addons
 
         private static void MoveFrameRelative(List<LineSelection> selectedLines, int direction, bool isCompleteAction)
         {
-            RiderFrame flag = window.Track.GetFlag();
+            RiderFrame flag = window.Track.Flag;
             int currentFrame = window.Track.Offset;
             if (flag == null || currentFrame <= flag.FrameID)
             {
@@ -38,8 +34,8 @@ namespace linerider.Addons
             // 
             // This is all if the user-configured relative speeds are (0, 0). If the user changes these speeds,
             // the lines will be drawn accordingly.
-            Vector2d flagFramePos = Game.Rider.GetBounds(flagFrameRider).Vector;
-            Vector2d flagNextFramePos = Game.Rider.GetBounds(flagNextFrameRider).Vector;
+            Vector2d flagFramePos = Rider.GetBounds(flagFrameRider).Vector;
+            Vector2d flagNextFramePos = Rider.GetBounds(flagNextFrameRider).Vector;
 
             // The difference between where the rider was on frames 0 and 1 establishes a reference speed to apply
             Vector2d firstFrameDiff = Vector2d.Subtract(flagNextFramePos, flagFramePos);
@@ -64,7 +60,7 @@ namespace linerider.Addons
             foreach (LineSelection selection in selectedLines)
             {
                 GameLine selectedLine = selection.line;
-                Vector2d p1 = selectedLine.Position;
+                Vector2d p1 = selectedLine.Position1;
                 Vector2d p2 = selectedLine.Position2;
 
                 Vector2d diff1 = Vector2d.Subtract(p1, currentFrameExpectedPos);
@@ -79,10 +75,10 @@ namespace linerider.Addons
                 {
                     switch (selection.line.Type)
                     {
-                        case LineType.Red:
+                        case LineType.Acceleration:
                             newLine = new RedLine(nextP1, nextP2, ((RedLine)selectedLine).inv);
                             break;
-                        case LineType.Blue:
+                        case LineType.Standard:
                             newLine = new StandardLine(nextP1, nextP2, ((StandardLine)selectedLine).inv);
                             break;
                         case LineType.Scenery:
@@ -100,14 +96,12 @@ namespace linerider.Addons
                 newLines.Add(newLine);
             }
 
-            var selectTool = CurrentTools.SelectTool;
+            SelectSubtool selectTool = CurrentTools.SelectSubtool;
             foreach (GameLine newLine in newLines)
             {
                 trackWriter.AddLine(newLine);
             }
-            selectTool.SelectLines(newLines);
-
-
+            _ = selectTool.SelectLines(newLines);
 
             if (isCompleteAction)
             {
@@ -130,13 +124,13 @@ namespace linerider.Addons
 
         private static List<LineSelection> GetLineSelections()
         {
-            if (!CurrentTools.SelectedTool.Equals(CurrentTools.SelectTool))
+            if (!CurrentTools.CurrentTool.Equals(CurrentTools.SelectSubtool))
             {
                 // This tool shouldn't work mid-selection, or if the Selection tool isn't active
                 return new List<LineSelection>();
             }
 
-            return CurrentTools.SelectTool.GetLineSelections();
+            return CurrentTools.SelectSubtool.GetLineSelections();
         }
 
         public static void AdvanceFrame()
@@ -163,7 +157,7 @@ namespace linerider.Addons
             {
                 return;
             }
-            RiderFrame flag = window.Track.GetFlag();
+            RiderFrame flag = window.Track.Flag;
             int currentFrame = window.Track.Offset;
             int framesElapsed = currentFrame - flag.FrameID;
 

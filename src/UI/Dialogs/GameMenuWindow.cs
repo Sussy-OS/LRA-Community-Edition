@@ -1,24 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
 using Gwen;
 using Gwen.Controls;
-using linerider.Tools;
-using linerider.Utils;
-using linerider.IO;
+using System.Drawing;
 
 namespace linerider.UI
 {
     public class GameMenuWindow : DialogBase
     {
-        protected override Margin PanelMargin
-        {
-            get
-            {
-                return Margin.Ten;
-            }
-        }
+        protected override Margin PanelMargin => Margin.Ten;
         public GameMenuWindow(GameCanvas parent, Editor editor) : base(parent, editor)
         {
             Title = "Game Menu";
@@ -31,24 +19,20 @@ namespace linerider.UI
         }
         private void Setup()
         {
-            var btnmargin = new Margin(10, 5, 10, 5);
+            Margin btnmargin = new Margin(10, 5, 10, 5);
+            Margin btnseparatormargin = new Margin(10, 5, 10, 20);
+
             Button save = new Button(this)
             {
                 Text = "Save Track",
                 Dock = Dock.Top,
-                Margin = new Margin(10, 5, 10, 5)
+                Margin = btnmargin
             };
             Button load = new Button(this)
             {
                 Text = "Load Track",
                 Dock = Dock.Top,
-                Margin = btnmargin
-            };
-            Button props = new Button(this)
-            {
-                Text = "Preferences",
-                Dock = Dock.Top,
-                Margin = btnmargin
+                Margin = btnseparatormargin
             };
             Button trackprops = new Button(this)
             {
@@ -56,25 +40,43 @@ namespace linerider.UI
                 Dock = Dock.Top,
                 Margin = btnmargin
             };
-            props.Clicked += (o, e) =>
+            Button triggers = new Button(this)
             {
-                _canvas.ShowPreferencesDialog(); 
-                Close();
+                Text = "Triggers",
+                Dock = Dock.Top,
+                Margin = btnseparatormargin
             };
-            trackprops.Clicked += (o, e) =>
+            Button preferences = new Button(this)
             {
-                _canvas.ShowTrackPropertiesDialog(); 
-                Close();
+                Text = "Preferences",
+                Dock = Dock.Top,
+                Margin = btnmargin
+            };
+
+            save.Clicked += (o, e) =>
+            {
+                _canvas.ShowSaveDialog();
+                _ = Close();
             };
             load.Clicked += (o, e) =>
             {
-                _canvas.ShowLoadDialog(); 
-                Close();
+                _canvas.ShowLoadDialog();
+                _ = Close();
             };
-            save.Clicked += (o, e) =>
+            trackprops.Clicked += (o, e) =>
             {
-                _canvas.ShowSaveDialog(); 
-                Close();
+                _canvas.ShowTrackPropertiesDialog();
+                _ = Close();
+            };
+            triggers.Clicked += (o, e) =>
+            {
+                _canvas.ShowTriggerWindow();
+                _ = Close();
+            };
+            preferences.Clicked += (o, e) =>
+            {
+                _canvas.ShowPreferencesDialog();
+                _ = Close();
             };
         }
     }

@@ -16,10 +16,9 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using linerider.Utils;
 using OpenTK;
 using System;
-using linerider.Game;
-using linerider.Utils;
 using System.Drawing;
 namespace linerider.Game
 {
@@ -34,48 +33,24 @@ namespace linerider.Game
         /// <summary>
         /// "Left" 
         /// </summary>
-        public virtual Vector2d Start
-        {
-            get { return Position; }
-        }
+        public virtual Vector2d Start => Position1;
         /// <summary>
         /// "Right"
         /// </summary>
-        public virtual Vector2d End
-        {
-            get { return Position2; }
-        }
+        public virtual Vector2d End => Position2;
 
-        public override string ToString()
-        {
-            return "ID: " +
-                ID +
-                " {" +
-                Math.Round(Position.X, 1) +
-                ", " +
-                Math.Round(Position.Y, 1) +
-                "}, {" +
-                Math.Round(Position2.X) +
-                ", " +
-                Math.Round(Position2.Y) +
-                "}";
-        }
-
-        public override int GetHashCode()
-        {
-            return ID;
-        }
+        public override int GetHashCode() => ID;
 
         public Color GetColor()
         {
             switch (Type)
             {
-                case LineType.Blue:
-                    return Settings.Lines.StandardLine;
-                case LineType.Red:
-                    return Settings.Lines.AccelerationLine;
+                case LineType.Standard:
+                    return Settings.Colors.StandardLine;
+                case LineType.Acceleration:
+                    return Settings.Colors.AccelerationLine;
                 case LineType.Scenery:
-                    return Settings.Lines.SceneryLine;
+                    return Settings.Colors.SceneryLine;
                 default:
                     throw new Exception("Unable to get the color for this line, its type is unknown");
             }

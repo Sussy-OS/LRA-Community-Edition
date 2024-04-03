@@ -16,30 +16,25 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+using linerider.Utils;
 using OpenTK;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Runtime.InteropServices;
 
 namespace linerider
 {
     public static class Program
     {
-#if DEBUG
-        public static bool IsDebugged = false;
-        public static bool LogGL => false;
-#endif
         public static string BinariesFolder = "bin";
-        public readonly static CultureInfo Culture = new CultureInfo("en-US");
-        public static string Version = "2023.9.1";
-        public static string TestVersion = "";
+        public static readonly CultureInfo Culture = new CultureInfo("en-US");
         public static string NewVersion = null;
-        public static readonly string WindowTitle = "Line Rider Advanced: Community Edition " + Version + TestVersion;
+        public static readonly string WindowTitle = AssemblyInfo.Title + " \u22C5 " + AssemblyInfo.FullVersion;
         public static Random Random;
         private static bool _crashed;
         private static MainWindow glGame;
@@ -48,38 +43,45 @@ namespace linerider
         public static string[] args;
 
         /// <summary>
-        /// Gets the current directory. Ends in Path.DirectorySeperator
+        /// Gets the default user data directory. Ends in Path.DirectorySeperator
         /// </summary>
         public static string UserDirectory
-        {       
+        {
             get
             {
                 if (_userdir == null)
                 {
                     _userdir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                    //mono doesnt do well with non windows ~/Documents.
+                    // Mono doesn't do well with non windows ~/Documents.
                     if (_userdir == Environment.GetFolderPath(Environment.SpecialFolder.Personal))
                     {
                         string documents = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Documents");
-                        //so, if we can find a Documents folder, we use that.
-                        //otherwise we're just gonna use ~/LRA, unfortunately.
+                        // So, if we can find a Documents folder, we use that.
+                        // Otherwise we're just gonna use ~/LRA, unfortunately.
                         if (Directory.Exists(documents))
                         {
                             _userdir = documents;
                         }
                     }
-                    // linux support: some users use XDG_DOCUMENTS_DIR to change
+                    // Linux support: some users use XDG_DOCUMENTS_DIR to change
                     // their Documents directory location.
-                    var xdg_dir = Environment.GetEnvironmentVariable("XDG_DOCUMENTS_DIR");
+                    string xdg_dir = Environment.GetEnvironmentVariable("XDG_DOCUMENTS_DIR");
                     if (!string.IsNullOrEmpty(xdg_dir) && Directory.Exists(xdg_dir))
                     {
                         _userdir = xdg_dir;
                     }
-                    _userdir += Path.DirectorySeparatorChar + "LRA" + Path.DirectorySeparatorChar;
+                    _userdir += Path.DirectorySeparatorChar + Constants.UserDirFolderName + Path.DirectorySeparatorChar;
                 }
                 return _userdir;
             }
         }
+        /// <summary>
+        /// Gets the portable user data directory. Ends in Path.DirectorySeperator
+        /// </summary>
+        public static string UserPortableDirectory => Path.Combine(CurrentDirectory, Constants.UserDirPortableFolderName) + Path.DirectorySeparatorChar;
+        /// <summary>
+        /// Gets the directory where the executable file is placed. Ends in Path.DirectorySeperator
+        /// </summary>
         public static string CurrentDirectory
         {
             get
@@ -95,68 +97,57 @@ namespace linerider
             if (!_crashed)
             {
                 _crashed = true;
-                glGame.Track.BackupTrack();
+                try
+                {
+                    glGame.Track.BackupTrack();
+                }
+                catch
+                { }
             }
-            if (System.Windows.Forms.MessageBox.Show(
-                "Unhandled Exception: " +
-                e.Message +
-                Environment.NewLine +
-                e.StackTrace +
-                Environment.NewLine +
-                "Would you like to export the crash data to a log.txt?",
-                "Error!",
-                System.Windows.Forms.MessageBoxButtons.YesNo)
-                 == System.Windows.Forms.DialogResult.Yes)
-            {
-                if (!File.Exists(UserDirectory + "log.txt"))
-                    File.Create(UserDirectory + "log.txt").Dispose();
 
-                string append = WindowTitle + "\r\n" + e.ToString() + "\r\n";
-                string begin = File.ReadAllText(UserDirectory + "log.txt", System.Text.Encoding.ASCII);
-                File.WriteAllText(UserDirectory + "log.txt", begin + append, System.Text.Encoding.ASCII);
+            string logDir = Settings.Local.UserDirPath;
+            if (logDir == null || !Directory.Exists(Settings.Local.UserDirPath))
+                logDir = CurrentDirectory;
+
+            string logFilePath = logDir + "log.txt";
+            string msgBoxSpearator = Environment.NewLine + Environment.NewLine;
+            string title = "Game crashed!";
+            string msg = $"Unhandled Exception: {e.Message}{msgBoxSpearator}{e.StackTrace}{msgBoxSpearator}{msgBoxSpearator}Would you like to export the crash data to a log file?{msgBoxSpearator}Log file path: {logFilePath}";
+
+            System.Windows.Forms.DialogResult btn = System.Windows.Forms.MessageBox.Show(msg, title, System.Windows.Forms.MessageBoxButtons.YesNo, System.Windows.Forms.MessageBoxIcon.Error);
+
+            if (btn == System.Windows.Forms.DialogResult.Yes)
+            {
+                string now = DateTime.Now.ToString("yyyy-MM-dd HH':'mm':'ss");
+                string headerSeparator = new string('-', 3);
+                string header = $"{headerSeparator} {AssemblyInfo.FullVersion} {headerSeparator} {now} {headerSeparator}";
+                string newLine = "\r\n";
+
+                if (!File.Exists(logFilePath))
+                    File.Create(logFilePath).Dispose();
+
+                string oldRecords = File.ReadAllText(logFilePath, System.Text.Encoding.UTF8);
+                string newRecord = header + newLine + newLine + e.ToString() + newLine;
+                if (!string.IsNullOrEmpty(oldRecords))
+                    newRecord = newLine + newRecord;
+
+                File.WriteAllText(logFilePath, oldRecords + newRecord, System.Text.Encoding.UTF8);
             }
+
             if (!nothrow)
                 throw e;
         }
 
-        public static void NonFatalError(string err)
-        {
-            System.Windows.Forms.MessageBox.Show("Non Fatal Error: " + err);
-        }
+        public static void NonFatalError(string err) => System.Windows.Forms.MessageBox.Show("Non Fatal Error: " + err);
         public static void Run(string[] givenArgs)
         {
-#if DEBUG
-            if (IsDebugged)
-            {
-                Debug.Listeners.Add(new TextWriterTraceListener(System.Console.Out));
-            }
+            if (Debugger.IsAttached)
+                Debug.Listeners.Add(new TextWriterTraceListener(Console.Out));
             else
-            {
                 AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            }
-#endif
-            args = givenArgs;
-            if (!Directory.Exists(UserDirectory))
-            {
-                Directory.CreateDirectory(UserDirectory);
-                System.Windows.Forms.MessageBox.Show("LRA User directory created at:\r\n" + UserDirectory);
-            }
-            Settings.Load();
-            //Create critical settings if needed
-            if (Settings.DefaultSaveFormat == null) { Settings.DefaultSaveFormat = ".trk"; }
-            if (Settings.DefaultQuicksaveFormat == null) { Settings.DefaultQuicksaveFormat = ".trk"; }
-            if (Settings.DefaultAutosaveFormat == null) { Settings.DefaultAutosaveFormat = ".trk"; }
-            if (Settings.DefaultCrashBackupFormat == null) { Settings.DefaultCrashBackupFormat = ".trk"; }
-            Settings.Save();
 
-            if (!Directory.Exists(UserDirectory + "Songs"))
-                Directory.CreateDirectory(UserDirectory + "Songs");
-            if (!Directory.Exists(UserDirectory + "Tracks"))
-                Directory.CreateDirectory(UserDirectory + "Tracks");
-            if (!Directory.Exists(UserDirectory + "Riders"))
-                Directory.CreateDirectory(UserDirectory + "Riders");
-            if (!Directory.Exists(UserDirectory + "Scarves"))
-                Directory.CreateDirectory(UserDirectory + "Scarves");
+            args = givenArgs;
+            Settings.Load();
 
             Random = new Random();
             GameResources.Init();
@@ -166,14 +157,14 @@ namespace linerider
                 using (glGame = new MainWindow())
                 {
                     UI.InputUtils.SetWindow(glGame);
-                    glGame.RenderSize = new System.Drawing.Size(Settings.mainWindowWidth, Settings.mainWindowHeight);
+                    glGame.RenderSize = new System.Drawing.Size(glGame.Width, glGame.Height);
                     Rendering.GameRenderer.Game = glGame;
-                    var ms = new MemoryStream(GameResources.icon);
+                    MemoryStream ms = new MemoryStream(GameResources.icon);
                     glGame.Icon = new System.Drawing.Icon(ms);
 
                     ms.Dispose();
                     glGame.Title = WindowTitle;
-                    glGame.Run(60, 0);//todo maybe not limit this
+                    glGame.Run(Constants.FrameRate, 0); // TODO: Maybe not limit this
                 }
                 Audio.AudioService.CloseDevice();
             }
@@ -186,8 +177,10 @@ namespace linerider
         }
         public static void UpdateCheck()
         {
-            if (TestVersion.Contains("closed"))
+            string subVer = AssemblyInfo.SubVersion;
+            if (subVer == "closed" || subVer == "test")
                 return;
+
             if (Settings.CheckForUpdates)
             {
                 new System.Threading.Thread(() =>
@@ -196,15 +189,25 @@ namespace linerider
                     {
                         using (WebClient wc = new WebClient())
                         {
-                            string currentversion = wc.DownloadString("https://raw.githubusercontent.com/Sussy-OS/LRA-Community-Edition/master/version");
-                            var idx = currentversion.IndexOfAny(new char[] { '\r', '\n' });
-                            if (idx != -1)
-                            {
-                                currentversion = currentversion.Remove(idx);
-                            }
-                            if (currentversion != Version && currentversion.Length > 0)
-                            {
-                                NewVersion = currentversion;
+                            string recentVersion = wc.DownloadString($"{Constants.GithubRawHeader}/main/version").Trim();
+
+                            if (recentVersion.Length > 0)
+                            { 
+                                try
+                                {
+                                    // Try to check every number of N.N.N.N format
+                                    List<int> current = AssemblyInfo.Version.Split('.').Select(int.Parse).ToList();
+                                    List<int> recent = recentVersion.Split('.').Select(int.Parse).ToList();
+
+                                    if (recent[0] > current[0] || recent[1] > current[1] || recent[2] > current[2] || recent[3] > current[3])
+                                        NewVersion = recentVersion;
+                                }
+                                catch
+                                {
+                                    // Fallback to string comparison
+                                    if (recentVersion != AssemblyInfo.Version)
+                                        NewVersion = recentVersion;
+                                }
                             }
                         }
                     }
@@ -217,13 +220,22 @@ namespace linerider
                 }.Start();
             }
         }
-        public static int GetWindowWidth()
+        public static int GetWindowWidth() => glGame.Width;
+        public static int GetWindowHeight() => glGame.Height;
+    }
+
+    internal static class AssemblyInfo
+    {
+        public static string Title => GetExecutingAssemblyAttribute<AssemblyTitleAttribute>(a => a.Title);
+        public static string Version => GetExecutingAssemblyAttribute<AssemblyFileVersionAttribute>(a => a.Version);
+        public static string FullVersion => GetExecutingAssemblyAttribute<AssemblyInformationalVersionAttribute>(a => a.InformationalVersion);
+        public static string SubVersion => Assembly.GetExecutingAssembly().GetCustomAttribute<CustomAttributes>().SubVersion;
+        public static List<string> ChangelogLines => Assembly.GetExecutingAssembly().GetCustomAttribute<CustomAttributes>().Changelog;
+
+        private static string GetExecutingAssemblyAttribute<T>(Func<T, string> value) where T : Attribute
         {
-            return (int)glGame.Width;
-        }
-        public static int GetWindowHeight()
-        {
-            return (int)glGame.Height;
+            T attribute = (T)Attribute.GetCustomAttribute(Assembly.GetExecutingAssembly(), typeof(T));
+            return value.Invoke(attribute);
         }
     }
 }

@@ -16,72 +16,35 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System;
-using OpenTK;
-using OpenTK.Graphics.OpenGL;
-using Color = System.Drawing.Color;
-using linerider.Rendering;
 using linerider.Game;
+using linerider.Rendering;
+using linerider.UI;
+using OpenTK;
+using System.Drawing;
+using Color = System.Drawing.Color;
 
 namespace linerider.Tools
 {
     public class PencilTool : Tool
     {
-        public override bool RequestsMousePrecision
-        {
-            get
-            {
-                return DrawingScenery;
-            }
-        }
-        public override Swatch Swatch
-        {
-            get
-            {
-                return SharedSwatches.DrawingToolsSwatch;
-            }
-        }
-        public override bool ShowSwatch
-        {
-            get
-            {
-                return true;
-            }
-        }
-        public override bool NeedsRender
-        {
-            get
-            {
-                return DrawingScenery || Active;
-            }
-        }
+        public override string Name => "Pencil Tool";
+        public override Bitmap Icon => GameResources.icon_tool_pencil.Bitmap;
+        public override bool RequestsMousePrecision => DrawingScenery;
+        public override Swatch Swatch => SharedSwatches.DrawingToolsSwatch;
+        public override bool ShowSwatch => true;
+        public override bool NeedsRender => DrawingScenery || Active;
         public bool Snapped = false;
         private bool _drawn;
         private Vector2d _start;
         private Vector2d _end;
-        private float MINIMUM_LINE
-        {
-            get
-            {
-                return 6f / game.Track.Zoom;
-            }
-        }
+        private float MINIMUM_LINE => 6f / game.Track.Zoom;
         private bool _addflip = false;
         private Vector2d _mouseshadow;
-        public bool DrawingScenery
-        {
-            get
-            {
-                return Swatch.Selected == LineType.Scenery;
-            }
-        }
-        public override MouseCursor Cursor
-        {
-            get { return game.Cursors["pencil"]; }
-        }
+        public bool DrawingScenery => Swatch.Selected == LineType.Scenery;
+        public override MouseCursor Cursor => game.Cursors.List[CursorsHandler.Type.Pencil];
         public PencilTool() : base()
         {
-            Swatch.Selected = LineType.Blue;
+            Swatch.Selected = LineType.Standard;
         }
         public override void OnMouseDown(Vector2d pos)
         {
@@ -90,10 +53,10 @@ namespace linerider.Tools
 
             if (EnableSnap)
             {
-                var gamepos = ScreenToGameCoords(pos);
-                using (var trk = game.Track.CreateTrackReader())
+                Vector2d gamepos = ScreenToGameCoords(pos);
+                using (TrackReader trk = game.Track.CreateTrackReader())
                 {
-                    var snap = TrySnapPoint(trk, gamepos, out bool snapped);
+                    Vector2d snap = TrySnapPoint(trk, gamepos, out bool snapped);
                     if (snapped)
                     {
                         _start = snap;
@@ -111,7 +74,7 @@ namespace linerider.Tools
                 _start = ScreenToGameCoords(pos);
                 Snapped = false;
             }
-            _addflip = UI.InputUtils.Check(UI.Hotkey.LineToolFlipLine);
+            _addflip = InputUtils.Check(Hotkey.LineToolFlipLine);
             _end = _start;
             game.Invalidate();
             game.Track.UndoManager.BeginAction();
@@ -125,9 +88,10 @@ namespace linerider.Tools
         private void AddLine()
         {
             _drawn = true;
-            using (var trk = game.Track.CreateTrackWriter())
+            using (TrackWriter trk = game.Track.CreateTrackWriter())
             {
-                var added = CreateLine(trk, _start, _end, _addflip, Snapped, false);
+                GameLine added = CreateLine(trk, _start, _end, _addflip, Snapped, false,
+                    Swatch.Selected, Swatch.RedMultiplier, Swatch.GreenMultiplier);
                 if (added is StandardLine)
                 {
                     game.Track.NotifyTrackChanged();
@@ -140,15 +104,15 @@ namespace linerider.Tools
             if (Active)
             {
                 _end = ScreenToGameCoords(pos);
-                var diff = _end - _start;
-                var len = diff.Length;
+                Vector2d diff = _end - _start;
+                double len = diff.Length;
 
                 if ((DrawingScenery && len >= MINIMUM_LINE) ||
                     (len >= MINIMUM_LINE * 2))
                 {
                     AddLine();
                     _start = _end;
-                    Snapped = true;//we are now connected to the newest line
+                    Snapped = true; // We are now connected to the newest line
                 }
                 game.Invalidate();
             }
@@ -179,13 +143,10 @@ namespace linerider.Tools
             base.Render();
             if (DrawingScenery && _mouseshadow != Vector2d.Zero && !game.Track.Playing)
             {
-                GameRenderer.RenderRoundedLine(_mouseshadow, _mouseshadow, Color.FromArgb(100, 0x00, 0xCC, 0x00), 2f * Swatch.GreenMultiplier, false, false);
+                GameRenderer.RenderRoundedLine(_mouseshadow, _mouseshadow, Color.FromArgb(100, Settings.Colors.SceneryLine), 2f * Swatch.GreenMultiplier, false, false);
             }
         }
-        public override void Cancel()
-        {
-            Stop();
-        }
+        public override void Cancel() => Stop();
         public override void Stop()
         {
             if (Active)

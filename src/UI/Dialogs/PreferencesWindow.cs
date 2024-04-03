@@ -1,36 +1,30 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Windows.Forms.VisualStyles;
 using Gwen;
 using Gwen.Controls;
-using linerider.Game;
-using linerider.Tools;
+using linerider.Drawing.RiderModel;
 using linerider.Utils;
-using OpenTK;
+using System;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 
 namespace linerider.UI
 {
     public class PreferencesWindow : DialogBase
     {
-        private CollapsibleList _prefcontainer;
+        private readonly CollapsibleList _prefcontainer;
         private ControlBase _focus;
         private int _tabscount = 0;
+
         public PreferencesWindow(GameCanvas parent, Editor editor) : base(parent, editor)
         {
             Title = "Preferences";
-            SetSize(450, 500);
+            _ = SetSize(500, 550);
             MinimumSize = Size;
             ControlBase bottom = new ControlBase(this)
             {
                 Dock = Dock.Bottom,
                 AutoSizeToContents = true,
+                Margin = new Margin(0, 5, 0, 0),
             };
             Button defaults = new Button(bottom)
             {
@@ -51,7 +45,7 @@ namespace linerider.UI
         }
         private void RestoreDefaults()
         {
-            var mbox = MessageBox.Show(
+            MessageBox mbox = MessageBox.Show(
                 _canvas,
                 "Are you sure? This cannot be undone.", "Restore Defaults",
                 MessageBox.ButtonType.OkCancel,
@@ -64,304 +58,390 @@ namespace linerider.UI
                     Settings.RestoreDefaultSettings();
                     Settings.Save();
                     _editor.InitCamera();
-                    Close();// this is lazy, but i don't want to update the ui
+                    _editor.RedrawAllLines();
+                    _ = Close();
+                    _canvas.ShowPreferencesDialog();
                 }
             };
         }
-        private void PopulateAudio(ControlBase parent)
+
+        private void Setup()
         {
-            var opts = GwenHelper.CreateHeaderPanel(parent, "Sync options");
-            var syncenabled = GwenHelper.AddCheckbox(opts, "Mute", Settings.MuteAudio, (o, e) =>
+            CollapsibleCategory cat;
+            ControlBase page;
+
+            cat = _prefcontainer.Add("Editor");
+
+            page = AddPage(cat, "Visualization");
+            PopulateVisualization(page);
+            page = AddPage(cat, "Playback");
+            PopulatePlayback(page);
+            page = AddPage(cat, "Camera");
+            PopulateCamera(page);
+            page = AddPage(cat, "Tools");
+            PopulateTools(page);
+
+            cat = _prefcontainer.Add("Interface");
+
+            page = AddPage(cat, "General");
+            PopulateInterfaceGeneral(page);
+            page = AddPage(cat, "Colors");
+            PopulateColors(page);
+            page = AddPage(cat, "Rider");
+            PopulateRider(page);
+
+            cat = _prefcontainer.Add("Application");
+
+            page = AddPage(cat, "Hotkeys");
+            PopulateHotkeys(page);
+            page = AddPage(cat, "User Data");
+            PopulateUserData(page);
+            page = AddPage(cat, "Other");
+            PopulateOther(page);
+
+            cat = _prefcontainer.Add("Tools");
+
+            page = AddPage(cat, "Animation");
+            PopulateRBLAnimation(page);
+
+            if (Settings.SettingsPane >= _tabscount && _focus == null)
             {
-                Settings.MuteAudio = ((Checkbox)o).IsChecked;
+                Settings.SettingsPane = 0;
+                _focus = page;
+                page.Show();
+            }
+        }
+        private ControlBase AddPage(CollapsibleCategory category, string name)
+        {
+            Panel panel = new Panel(this)
+            {
+                Dock = Dock.Fill,
+                Padding = Padding.Five
+            };
+            panel.Hide();
+            panel.UserData = _tabscount;
+
+            Button btn = category.Add(name);
+            btn.UserData = panel;
+
+            category.Selected += CategorySelected;
+            if (_tabscount == Settings.SettingsPane)
+                btn.Press();
+            _tabscount += 1;
+
+            return panel;
+        }
+        private void CategorySelected(object sender, ItemSelectedEventArgs e)
+        {
+            if (_focus != e.SelectedItem.UserData)
+            {
+                _focus?.Hide();
+
+                _focus = (ControlBase)e.SelectedItem.UserData;
+                _focus.Show();
+                Settings.SettingsPane = (int)_focus.UserData;
+                Settings.Save();
+            }
+        }
+
+        private void PopulateVisualization(ControlBase parent)
+        {
+            Panel advancedGroup = GwenHelper.CreateHeaderPanel(parent, "Advanced Visualization");
+
+            Panel advancedGroupLeft = new Panel(advancedGroup)
+            {
+                Dock = Dock.Left,
+                ShouldDrawBackground = false,
+                AutoSizeToContents = true,
+                Margin = Margin.Zero,
+            };
+            Checkbox contact = GwenHelper.AddCheckbox(advancedGroupLeft, "Contact Points", Settings.Editor.DrawContactPoints, (o, e) =>
+            {
+                Settings.Editor.DrawContactPoints = ((Checkbox)o).IsChecked;
                 Settings.Save();
             });
-            HorizontalSlider vol = new HorizontalSlider(null)
+            Checkbox momentum = GwenHelper.AddCheckbox(advancedGroupLeft, "Momentum Vectors", Settings.Editor.MomentumVectors, (o, e) =>
+            {
+                Settings.Editor.MomentumVectors = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            Checkbox hitbox = GwenHelper.AddCheckbox(advancedGroupLeft, "Line Hitbox", Settings.Editor.RenderGravityWells, (o, e) =>
+            {
+                Settings.Editor.RenderGravityWells = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            Checkbox hittest = GwenHelper.AddCheckbox(advancedGroupLeft, "Hit Test", Settings.Editor.HitTest, (o, e) =>
+            {
+                Settings.Editor.HitTest = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            Checkbox drawagws = GwenHelper.AddCheckbox(advancedGroupLeft, "Line Extensions (AGWs)", Settings.DrawAGWs, (o, e) =>
+            {
+                Settings.DrawAGWs = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+
+            Panel advancedGroupRight = new Panel(advancedGroup)
+            {
+                Dock = Dock.Right,
+                ShouldDrawBackground = false,
+                AutoSizeToContents = true,
+                Margin = Margin.Zero,
+            };
+            Checkbox drawgrid = GwenHelper.AddCheckbox(advancedGroupRight, "Simulation Grid", Settings.DrawCollisionGrid, (o, e) =>
+            {
+                Settings.DrawCollisionGrid = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            Checkbox drawfloatgrid = GwenHelper.AddCheckbox(advancedGroupRight, "Floating-point grid", Settings.DrawFloatGrid, (o, e) =>
+            {
+                Settings.DrawFloatGrid = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            Checkbox drawcam = GwenHelper.AddCheckbox(advancedGroupRight, "Camera", Settings.DrawCamera, (o, e) =>
+            {
+                Settings.DrawCamera = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            Checkbox coordmenu = GwenHelper.AddCheckbox(advancedGroupRight, "Show Coordinate Menu", Settings.Editor.ShowCoordinateMenu, (o, e) =>
+            {
+                Settings.Editor.ShowCoordinateMenu = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+
+            Panel onionGroup = GwenHelper.CreateHeaderPanel(parent, "Onion Skinning");
+            Checkbox onion = GwenHelper.AddCheckbox(onionGroup, "Enabled", Settings.OnionSkinning, (o, e) =>
+            {
+                Settings.OnionSkinning = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            Spinner pastOnionSkins = new Spinner(onionGroup)
             {
                 Min = 0,
-                Max = 100,
-                Value = Settings.Volume,
-                Width = 80,
+                Max = 1000,
+                Value = Settings.PastOnionSkins,
             };
-            vol.ValueChanged += (o, e) =>
+            pastOnionSkins.ValueChanged += (o, e) =>
             {
-                Settings.Volume = (float)vol.Value;
+                Settings.PastOnionSkins = (int)((Spinner)o).Value;
                 Settings.Save();
             };
-            GwenHelper.CreateLabeledControl(opts, "Volume", vol);
-            vol.Width = 200;
-        }
-        private void PopulateKeybinds(ControlBase parent)
-        {
-            var hk = new HotkeyWidget(parent);
-        }
-        private void PopulateModes(ControlBase parent)
-        {
-            var background = GwenHelper.CreateHeaderPanel(parent, "Background Color");
-            GwenHelper.AddCheckbox(background, "Night Mode", Settings.NightMode, (o, e) =>
+            Spinner futureOnionSkins = new Spinner(onionGroup)
             {
-                Settings.NightMode = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            var whitebg = GwenHelper.AddCheckbox(background, "Pure White Background", Settings.WhiteBG, (o, e) =>
-            {
-                Settings.WhiteBG = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            var panelgeneral = GwenHelper.CreateHeaderPanel(parent, "General");
-            var superzoom = GwenHelper.AddCheckbox(panelgeneral, "Superzoom", Settings.SuperZoom, (o, e) =>
-            {
-                Settings.SuperZoom = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            ComboBox scroll = GwenHelper.CreateLabeledCombobox(panelgeneral, "Scroll Sensitivity:");
-            scroll.Margin = new Margin(0, 0, 0, 0);
-            scroll.Dock = Dock.Bottom;
-            scroll.AddItem("0.25x").Name = "0.25";
-            scroll.AddItem("0.5x").Name = "0.5";
-            scroll.AddItem("0.75x").Name = "0.75";
-            scroll.AddItem("1x").Name = "1";
-            scroll.AddItem("2x").Name = "2";
-            scroll.AddItem("3x").Name = "3";
-            scroll.SelectByName("1");//default if user setting fails.
-            scroll.SelectByName(Settings.ScrollSensitivity.ToString(Program.Culture));
-            scroll.ItemSelected += (o, e) =>
-            {
-                if (e.SelectedItem != null)
-                {
-                    Settings.ScrollSensitivity = float.Parse(e.SelectedItem.Name, Program.Culture);
-                    Settings.Save();
-                }
+                Margin = new Margin(3, 0, 0, 0),
+                Min = 0,
+                Max = 1000,
+                Value = Settings.FutureOnionSkins,
             };
-            superzoom.Tooltip = "Allows the user to zoom in\nnearly 10x more than usual.";
+            futureOnionSkins.ValueChanged += (o, e) =>
+            {
+                Settings.FutureOnionSkins = (int)((Spinner)o).Value;
+                Settings.Save();
+            };
+            _ = GwenHelper.CreateLabeledControl(onionGroup, "Onion Skins Before/After", new ControlBase[2] { pastOnionSkins, futureOnionSkins });
 
-            var invisibleRider = GwenHelper.AddCheckbox(panelgeneral, "Invisible Rider", Settings.InvisibleRider, (o, e) =>
+            Panel overlayGroup = GwenHelper.CreateHeaderPanel(parent, "Frame Overlay");
+
+            ControlBase offsetbase = null;
+            ControlBase fixedbase = null;
+
+            Spinner offsetspinner = new Spinner(null)
+            {
+                Min = -999,
+                Max = 999,
+                Value = Settings.Local.TrackOverlayOffset,
+            };
+            offsetspinner.ValueChanged += (o, e) =>
+            {
+                Settings.Local.TrackOverlayOffset = (int)offsetspinner.Value;
+            };
+            Spinner fixedspinner = new Spinner(null)
+            {
+                Min = 0,
+                Max = _editor.FrameCount,
+                Value = Settings.Local.TrackOverlayFixedFrame,
+            };
+            fixedspinner.ValueChanged += (o, e) =>
+            {
+                Settings.Local.TrackOverlayFixedFrame = (int)fixedspinner.Value;
+            };
+            void updatestate()
+            {
+                offsetspinner.IsDisabled = !Settings.Local.TrackOverlay;
+                fixedspinner.IsDisabled = !Settings.Local.TrackOverlay;
+                offsetbase.IsHidden = Settings.Local.TrackOverlayFixed;
+                fixedbase.IsHidden = !Settings.Local.TrackOverlayFixed;
+            }
+            Checkbox enabled = GwenHelper.AddCheckbox(overlayGroup, "Enabled", Settings.Local.TrackOverlay, (o, e) =>
+            {
+                Settings.Local.TrackOverlay = ((Checkbox)o).IsChecked;
+                updatestate();
+            });
+            _ = GwenHelper.AddCheckbox(overlayGroup, "Fixed Frame", Settings.Local.TrackOverlayFixed, (o, e) =>
+            {
+                Settings.Local.TrackOverlayFixed = ((Checkbox)o).IsChecked;
+                updatestate();
+            });
+            offsetbase = GwenHelper.CreateLabeledControl(overlayGroup, "Frame Offset", offsetspinner);
+            fixedbase = GwenHelper.CreateLabeledControl(overlayGroup, "Frame ID", fixedspinner);
+            updatestate();
+            enabled.Tooltip = "Display an onion skin of the track\nat a specified offset for animation";
+
+            onion.Tooltip = "Visualize the rider before/after\nthe current frame.";
+            momentum.Tooltip = "Visualize the direction of\nmomentum for each contact point";
+            contact.Tooltip = "Visualize the parts of the rider\nthat interact with lines.";
+            hitbox.Tooltip = "Visualizes the hitbox of lines\nUsed for advanced editing";
+            hittest.Tooltip = "Lines that have been hit by\nthe rider will glow.";
+
+            Panel otherGroup = GwenHelper.CreateHeaderPanel(parent, "Other");
+            Checkbox invisibleRider = GwenHelper.AddCheckbox(otherGroup, "Invisible Rider", Settings.InvisibleRider, (o, e) =>
             {
                 Settings.InvisibleRider = ((Checkbox)o).IsChecked;
                 Settings.Save();
             });
         }
-
-        private void PopulateLines(ControlBase parent)
+        private void PopulatePlayback(ControlBase parent)
         {
-            Panel lineColors = GwenHelper.CreateHeaderPanel(parent, "Line Color Customization");
-            var defaultRed = new Spinner(lineColors)
+            Panel zoomGroup = GwenHelper.CreateHeaderPanel(parent, "Playback Zoom");
+
+            RadioButtonGroup pbzoom = new RadioButtonGroup(zoomGroup)
             {
-                Min = 0,
-                Max = 255,
-                Value = Settings.Lines.DefaultLine.R
+                Dock = Dock.Left,
+                ShouldDrawBackground = false,
             };
-            defaultRed.ValueChanged += (o, e) =>
+            RadioButton asIsType = pbzoom.AddOption("Keep As Is");
+            RadioButton frameType = pbzoom.AddOption("Current Frame Zoom");
+
+            asIsType.Tooltip = "When playing, zoom stays as is\n(if you have camera zoomed in, it stays zoomed in).";
+            frameType.Tooltip = "When playing, zoom matches current frame zoom\n(either track zoom or value set by triggers).";
+
+            frameType.CheckChanged += (o, e) =>
             {
-                Settings.Lines.DefaultLine = Color.FromArgb((int)((Spinner)o).Value, Settings.Lines.DefaultLine.G, Settings.Lines.DefaultLine.B);
+                Settings.PlaybackZoomType = Settings.PlaybackZoomMode.Frame;
+                Settings.Save();
+            };
+            asIsType.CheckChanged += (o, e) =>
+            {
+                Settings.PlaybackZoomType = Settings.PlaybackZoomMode.AsIs;
                 Settings.Save();
             };
 
-            var defaultGreen = new Spinner(lineColors)
+            switch (Settings.PlaybackZoomType)
             {
-                Min = 0,
-                Max = 255,
-                Value = Settings.Lines.DefaultLine.G
-            };
-            defaultGreen.ValueChanged += (o, e) =>
+                case Settings.PlaybackZoomMode.Frame:
+                    frameType.Select();
+                    break;
+                case Settings.PlaybackZoomMode.AsIs:
+                    asIsType.Select();
+                    break;
+            }
+
+            Panel framerateGroup = GwenHelper.CreateHeaderPanel(parent, "Frame Control");
+            Checkbox smooth = GwenHelper.AddCheckbox(framerateGroup, "Smooth Playback", Settings.SmoothPlayback, (o, e) =>
             {
-                Settings.Lines.DefaultLine = Color.FromArgb(Settings.Lines.DefaultLine.R, (int)((Spinner)o).Value, Settings.Lines.DefaultLine.B);
+                Settings.SmoothPlayback = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            ComboBox pbrate = GwenHelper.CreateLabeledCombobox(framerateGroup, "Playback Rate:");
+            for (int i = 0; i < Constants.MotionArray.Length; i++)
+            {
+                float f = Constants.MotionArray[i] / (float)Constants.PhysicsRate;
+                _ = pbrate.AddItem(f + "x", f.ToString(CultureInfo.InvariantCulture), f);
+            }
+            pbrate.SelectByName(Settings.DefaultPlayback.ToString(CultureInfo.InvariantCulture));
+            pbrate.ItemSelected += (o, e) =>
+            {
+                Settings.DefaultPlayback = (float)e.SelectedItem.UserData;
                 Settings.Save();
             };
-
-            var defaultBlue = new Spinner(lineColors)
+            ComboBox cbslowmo = GwenHelper.CreateLabeledCombobox(framerateGroup, "Slowmo FPS:");
+            int[] fpsarray = new[] { 1, 2, 5, 10, 20 };
+            for (int i = 0; i < fpsarray.Length; i++)
             {
-                Min = 0,
-                Max = 255,
-                Value = Settings.Lines.DefaultLine.B
-            };
-            defaultBlue.ValueChanged += (o, e) =>
+                _ = cbslowmo.AddItem(fpsarray[i].ToString(), fpsarray[i].ToString(CultureInfo.InvariantCulture),
+                    fpsarray[i]);
+            }
+            cbslowmo.SelectByName(Settings.SlowmoSpeed.ToString(CultureInfo.InvariantCulture));
+            cbslowmo.ItemSelected += (o, e) =>
             {
-                Settings.Lines.DefaultLine = Color.FromArgb(Settings.Lines.DefaultLine.R, Settings.Lines.DefaultLine.G, (int)((Spinner)o).Value);
+                Settings.SlowmoSpeed = (int)e.SelectedItem.UserData;
                 Settings.Save();
             };
+            smooth.Tooltip = "Interpolates frames from the base\nphysics rate of 40 frames/second\nup to 60 frames/second";
 
-            GwenHelper.CreateLabeledControl(parent, "Default line color (R,G,B)", new ControlBase[3] { defaultRed, defaultGreen, defaultBlue });
-
-            var nightRed = new Spinner(lineColors)
+            Panel otherGroup = GwenHelper.CreateHeaderPanel(parent, "Other");
+            
+            Checkbox colorplayback = GwenHelper.AddCheckbox(otherGroup, "Color Playback", Settings.ColorPlayback, (o, e) =>
             {
-                Min = 0,
-                Max = 255,
-                Value = Settings.Lines.DefaultNightLine.R
+                Settings.ColorPlayback = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            colorplayback.Tooltip = "Show lines color during playback";
+            Checkbox lockduration = GwenHelper.AddCheckbox(otherGroup, "Lock Track Duration", Settings.LockTrackDuration, (o, e) =>
+            {
+                Settings.LockTrackDuration = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            lockduration.Tooltip = "Unchecked: timeline auto extends on reaching its end. Flag is required to export videos.";
+            lockduration.Tooltip += "\nChecked: stop playback when timeline reaches end. Flag is not required to export videos.";
+            lockduration.Tooltip += "\n\nTrack duration can be changed by right clicking the timeline.";
+            Checkbox syncduration = GwenHelper.AddCheckbox(otherGroup, "Sync Track And Song Duration", Settings.SyncTrackAndSongDuration, (o, e) =>
+            {
+                Settings.SyncTrackAndSongDuration = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            syncduration.Tooltip = "Timeline automatically extends/shrinks to the song duration";
+            Spinner timelinelength = new Spinner(parent)
+            {
+                Min = 1,
+                Max = 600,
+                Value = Settings.DefaultTimelineLength,
             };
-            nightRed.ValueChanged += (o, e) =>
+            timelinelength.ValueChanged += (o, e) =>
             {
-                Settings.Lines.DefaultNightLine = Color.FromArgb((int)((Spinner)o).Value, Settings.Lines.DefaultNightLine.G, Settings.Lines.DefaultNightLine.B);
+                Settings.DefaultTimelineLength = (int)((Spinner)o).Value;
                 Settings.Save();
             };
+            ControlBase timelinelengthbar = GwenHelper.CreateLabeledControl(otherGroup, "Default Timeline Length (Seconds)", timelinelength);
+            timelinelengthbar.Tooltip = "Timeline length on game startup";
 
-            var nightGreen = new Spinner(lineColors)
+            Spinner triggerlength = new Spinner(parent)
             {
-                Min = 0,
-                Max = 255,
-                Value = Settings.Lines.DefaultNightLine.G
+                Min = 1,
+                Max = int.MaxValue - 1,
+                Value = Settings.DefaultTriggerLength,
             };
-            nightGreen.ValueChanged += (o, e) =>
+            triggerlength.ValueChanged += (o, e) =>
             {
-                Settings.Lines.DefaultNightLine = Color.FromArgb(Settings.Lines.DefaultNightLine.R, (int)((Spinner)o).Value, Settings.Lines.DefaultNightLine.B);
+                Settings.DefaultTriggerLength = (int)((Spinner)o).Value;
                 Settings.Save();
             };
-
-            var nightBlue = new Spinner(lineColors)
-            {
-                Min = 0,
-                Max = 255,
-                Value = Settings.Lines.DefaultNightLine.B
-            };
-            nightBlue.ValueChanged += (o, e) =>
-            {
-                Settings.Lines.DefaultNightLine = Color.FromArgb(Settings.Lines.DefaultNightLine.R, Settings.Lines.DefaultNightLine.G, (int)((Spinner)o).Value);
-                Settings.Save();
-            };
-
-            GwenHelper.CreateLabeledControl(parent, "Night line color (R,G,B)", new ControlBase[3] { nightRed, nightGreen, nightBlue });
-
-            var accelRed = new Spinner(lineColors)
-            {
-                Min = 0,
-                Max = 255,
-                Value = Settings.Lines.AccelerationLine.R
-            };
-            accelRed.ValueChanged += (o, e) =>
-            {
-                Settings.Lines.AccelerationLine = Color.FromArgb((int)((Spinner)o).Value, Settings.Lines.AccelerationLine.G, Settings.Lines.AccelerationLine.B);
-                SaveLines();
-            };
-
-            var accelGreen = new Spinner(lineColors)
-            {
-                Min = 0,
-                Max = 255,
-                Value = Settings.Lines.AccelerationLine.G
-            };
-            accelGreen.ValueChanged += (o, e) =>
-            {
-                Settings.Lines.AccelerationLine = Color.FromArgb(Settings.Lines.AccelerationLine.R, (int)((Spinner)o).Value, Settings.Lines.AccelerationLine.B);
-                SaveLines();
-            };
-
-            var accelBlue = new Spinner(lineColors)
-            {
-                Min = 0,
-                Max = 255,
-                Value = Settings.Lines.AccelerationLine.B
-            };
-            accelBlue.ValueChanged += (o, e) =>
-            {
-                Settings.Lines.AccelerationLine = Color.FromArgb(Settings.Lines.AccelerationLine.R, Settings.Lines.AccelerationLine.G, (int)((Spinner)o).Value);
-                SaveLines();
-            };
-
-            GwenHelper.CreateLabeledControl(parent, "Acceleration line color (R,G,B)", new ControlBase[3] { accelRed, accelGreen, accelBlue });
-
-            var sceneryRed = new Spinner(lineColors)
-            {
-                Min = 0,
-                Max = 255,
-                Value = Settings.Lines.SceneryLine.R
-            };
-            sceneryRed.ValueChanged += (o, e) =>
-            {
-                Settings.Lines.SceneryLine = Color.FromArgb((int)((Spinner)o).Value, Settings.Lines.SceneryLine.G, Settings.Lines.SceneryLine.B);
-                Settings.Save();
-            };
-
-            var sceneryGreen = new Spinner(lineColors)
-            {
-                Min = 0,
-                Max = 255,
-                Value = Settings.Lines.SceneryLine.G
-            };
-            sceneryGreen.ValueChanged += (o, e) =>
-            {
-                Settings.Lines.SceneryLine = Color.FromArgb(Settings.Lines.SceneryLine.R, (int)((Spinner)o).Value, Settings.Lines.SceneryLine.B);
-                Settings.Save();
-            };
-
-            var sceneryBlue = new Spinner(lineColors)
-            {
-                Min = 0,
-                Max = 255,
-                Value = Settings.Lines.SceneryLine.B
-            };
-            sceneryBlue.ValueChanged += (o, e) =>
-            {
-                Settings.Lines.SceneryLine = Color.FromArgb(Settings.Lines.SceneryLine.R, Settings.Lines.SceneryLine.G, (int)((Spinner)o).Value);
-                Settings.Save();
-            };
-
-            GwenHelper.CreateLabeledControl(parent, "Scenery line color (R,G,B)", new ControlBase[3] { sceneryRed, sceneryGreen, sceneryBlue });
-
-            var standardRed = new Spinner(lineColors)
-            {
-                Min = 0,
-                Max = 255,
-                Value = Settings.Lines.StandardLine.R
-            };
-            standardRed.ValueChanged += (o, e) =>
-            {
-                Settings.Lines.StandardLine = Color.FromArgb((int)((Spinner)o).Value, Settings.Lines.StandardLine.G, Settings.Lines.StandardLine.B);
-                SaveLines();
-            };
-
-            var standardGreen = new Spinner(lineColors)
-            {
-                Min = 0,
-                Max = 255,
-                Value = Settings.Lines.StandardLine.G
-            };
-            standardGreen.ValueChanged += (o, e) =>
-            {
-                Settings.Lines.StandardLine = Color.FromArgb(Settings.Lines.StandardLine.R, (int)((Spinner)o).Value, Settings.Lines.StandardLine.B);
-                SaveLines();
-            };
-
-            var standardBlue = new Spinner(lineColors)
-            {
-                Min = 0,
-                Max = 255,
-                Value = Settings.Lines.StandardLine.B
-            };
-            standardBlue.ValueChanged += (o, e) =>
-            {
-                Settings.Lines.StandardLine = Color.FromArgb(Settings.Lines.StandardLine.R, Settings.Lines.StandardLine.G, (int)((Spinner)o).Value);
-                SaveLines();
-            };
-
-            GwenHelper.CreateLabeledControl(parent, "Standard line color (R,G,B)", new ControlBase[3] { standardRed, standardGreen, standardBlue });
-
+            ControlBase triggerlengthbar = GwenHelper.CreateLabeledControl(otherGroup, "Default Trigger Length (Frames)", triggerlength);
+            triggerlengthbar.Tooltip = "Length of new triggers\n40 frames = 1 second";
         }
-
-        private void SaveLines()
-        {
-            Settings.Save();
-            linerider.Rendering.GameRenderer.Game.Track.RedrawAllLines();
-        }
-
         private void PopulateCamera(ControlBase parent)
         {
-            var camtype = GwenHelper.CreateHeaderPanel(parent, "Camera Type");
-            var camprops = GwenHelper.CreateHeaderPanel(parent, "Camera Properties");
-            RadioButtonGroup rbcamera = new RadioButtonGroup(camtype)
+            Panel typeGroup = GwenHelper.CreateHeaderPanel(parent, "Camera Type");
+
+            RadioButtonGroup rbcamera = new RadioButtonGroup(typeGroup)
             {
                 Dock = Dock.Top,
                 ShouldDrawBackground = false,
             };
-            var soft = rbcamera.AddOption("Soft Camera");
-            var predictive = rbcamera.AddOption("Predictive Camera");
-            var legacy = rbcamera.AddOption("Legacy Camera");
-            var round = GwenHelper.AddCheckbox(camprops, "Round Legacy Camera", Settings.RoundLegacyCamera, (o, e) =>
+            RadioButton soft = rbcamera.AddOption("Soft Camera");
+            RadioButton predictive = rbcamera.AddOption("Predictive Camera");
+            RadioButton legacy = rbcamera.AddOption("Legacy Camera");
+
+            Panel propsGroup = GwenHelper.CreateHeaderPanel(parent, "Camera Properties");
+            Checkbox round = GwenHelper.AddCheckbox(propsGroup, "Round Legacy Camera", Settings.RoundLegacyCamera, (o, e) =>
             {
                 Settings.RoundLegacyCamera = ((Checkbox)o).IsChecked;
                 Settings.Save();
             });
             if (Settings.SmoothCamera)
             {
+                round.IsDisabled = true;
+
                 if (Settings.PredictiveCamera)
                     predictive.Select();
                 else
@@ -396,132 +476,37 @@ namespace linerider.UI
                 _editor.InitCamera();
             };
             predictive.Tooltip = "This is the camera that was added in 1.03\nIt moves relative to the future of the track";
-        }
-        private void PopulateEditor(ControlBase parent)
-        {
-            Panel advancedtools = GwenHelper.CreateHeaderPanel(parent, "Advanced Visualization");
 
-            var contact = GwenHelper.AddCheckbox(advancedtools, "Contact Points", Settings.Editor.DrawContactPoints, (o, e) =>
+            Panel editorGroup = GwenHelper.CreateHeaderPanel(parent, "Editor Camera Control");
+            Checkbox superzoom = GwenHelper.AddCheckbox(editorGroup, "Superzoom", Settings.SuperZoom, (o, e) =>
             {
-                Settings.Editor.DrawContactPoints = ((Checkbox)o).IsChecked;
+                Settings.SuperZoom = ((Checkbox)o).IsChecked;
                 Settings.Save();
             });
-            var momentum = GwenHelper.AddCheckbox(advancedtools, "Momentum Vectors", Settings.Editor.MomentumVectors, (o, e) =>
+            ComboBox scroll = GwenHelper.CreateLabeledCombobox(editorGroup, "Scroll Sensitivity:");
+            scroll.Margin = Margin.Zero;
+            scroll.Dock = Dock.Right;
+            scroll.AddItem("0.25x").Name = "0.25";
+            scroll.AddItem("0.5x").Name = "0.5";
+            scroll.AddItem("0.75x").Name = "0.75";
+            scroll.AddItem("1x").Name = "1";
+            scroll.AddItem("2x").Name = "2";
+            scroll.AddItem("3x").Name = "3";
+            scroll.SelectByName("1"); // Default if user setting fails.
+            scroll.SelectByName(Settings.ScrollSensitivity.ToString(Program.Culture));
+            scroll.ItemSelected += (o, e) =>
             {
-                Settings.Editor.MomentumVectors = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            var hitbox = GwenHelper.AddCheckbox(advancedtools, "Line Hitbox", Settings.Editor.RenderGravityWells, (o, e) =>
-            {
-                Settings.Editor.RenderGravityWells = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            var hittest = GwenHelper.AddCheckbox(advancedtools, "Hit Test", Settings.Editor.HitTest, (o, e) =>
-            {
-                Settings.Editor.HitTest = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            var onion = GwenHelper.AddCheckbox(advancedtools, "Onion Skinning", Settings.OnionSkinning, (o, e) =>
-            {
-                Settings.OnionSkinning = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            var pastOnionSkins = new Spinner(advancedtools)
-            {
-                Min = 0,
-                Max = 1000,
-                Value = Settings.PastOnionSkins,
+                if (e.SelectedItem != null)
+                {
+                    Settings.ScrollSensitivity = float.Parse(e.SelectedItem.Name, Program.Culture);
+                    Settings.Save();
+                }
             };
-            pastOnionSkins.ValueChanged += (o, e) =>
-            {
-                Settings.PastOnionSkins = (int)((Spinner)o).Value;
-                Settings.Save();
-            };
-            var futureOnionSkins = new Spinner(advancedtools)
-            {
-                Min = 0,
-                Max = 1000,
-                Value = Settings.FutureOnionSkins,
-            };
-            futureOnionSkins.ValueChanged += (o, e) =>
-            {
-                Settings.FutureOnionSkins = (int)((Spinner)o).Value;
-                Settings.Save();
-            };
-            GwenHelper.CreateLabeledControl(advancedtools, "#Onion Skins (Before, After)", new ControlBase[2] { pastOnionSkins, futureOnionSkins });
-            var drawgrid = GwenHelper.AddCheckbox(advancedtools, "Simulation Grid", Settings.DrawCollisionGrid, (o, e) =>
-            {
-                Settings.DrawCollisionGrid = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            var drawagws = GwenHelper.AddCheckbox(advancedtools, "Line Extensions (AGWs)", Settings.DrawAGWs, (o, e) =>
-            {
-                Settings.DrawAGWs = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            var drawfloatgrid = GwenHelper.AddCheckbox(advancedtools, "Floating-point (angled kramual) grid", Settings.DrawFloatGrid, (o, e) =>
-            {
-                Settings.DrawFloatGrid = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            var drawcam = GwenHelper.AddCheckbox(advancedtools, "Camera", Settings.DrawCamera, (o, e) =>
-            {
-                Settings.DrawCamera = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            Panel pblifelock = GwenHelper.CreateHeaderPanel(parent, "Lifelock Conditions");
-            GwenHelper.AddCheckbox(pblifelock, "Next frame constraints", Settings.Editor.LifeLockNoOrange, (o, e) =>
-            {
-                Settings.Editor.LifeLockNoOrange = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            GwenHelper.AddCheckbox(pblifelock, "No Fakie Death", Settings.Editor.LifeLockNoFakie, (o, e) =>
-            {
-                Settings.Editor.LifeLockNoFakie = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
+            superzoom.Tooltip = "Allows the user to zoom in\nnearly 10x more than usual.";
 
-            var overlay = GwenHelper.CreateHeaderPanel(parent, "Frame Overlay");
-            PopulateOverlay(overlay);
+            Panel otherGroup = GwenHelper.CreateHeaderPanel(parent, "Other");
 
-            onion.Tooltip = "Visualize the rider before/after\nthe current frame.";
-            momentum.Tooltip = "Visualize the direction of\nmomentum for each contact point";
-            contact.Tooltip = "Visualize the parts of the rider\nthat interact with lines.";
-            hitbox.Tooltip = "Visualizes the hitbox of lines\nUsed for advanced editing";
-            hittest.Tooltip = "Lines that have been hit by\nthe rider will glow.";
-        }
-        private void PopulatePlayback(ControlBase parent)
-        {
-            var playbackzoom = GwenHelper.CreateHeaderPanel(parent, "Playback Zoom");
-            RadioButtonGroup pbzoom = new RadioButtonGroup(playbackzoom)
-            {
-                Dock = Dock.Left,
-                ShouldDrawBackground = false,
-            };
-            pbzoom.AddOption("Default Zoom");
-            pbzoom.AddOption("Current Zoom");
-            pbzoom.AddOption("Specific Zoom");
-            Spinner playbackspinner = new Spinner(pbzoom)
-            {
-                Dock = Dock.Bottom,
-                Max = 24,
-                Min = 1,
-            };
-            pbzoom.SelectionChanged += (o, e) =>
-            {
-                Settings.PlaybackZoomType = ((RadioButtonGroup)o).SelectedIndex;
-                Settings.Save();
-                playbackspinner.IsHidden = (((RadioButtonGroup)o).SelectedLabel != "Specific Zoom");
-            };
-            playbackspinner.ValueChanged += (o, e) =>
-            {
-                Settings.PlaybackZoomValue = (float)((Spinner)o).Value;
-                Settings.Save();
-            };
-            pbzoom.SetSelection(Settings.PlaybackZoomType);
-            playbackspinner.Value = Settings.PlaybackZoomValue;
-
-            var zoomMultiplier = new Spinner(pbzoom)
+            Spinner zoomMultiplier = new Spinner(this)
             {
                 Min = 0.01,
                 Max = 100.0,
@@ -533,103 +518,14 @@ namespace linerider.UI
                 Settings.ZoomMultiplier = (float)((Spinner)o).Value;
                 Settings.Save();
             };
-            GwenHelper.CreateLabeledControl(pbzoom, "Zoom Multiplier", zoomMultiplier);
 
-            var playbackmode = GwenHelper.CreateHeaderPanel(parent, "Playback Color");
-            GwenHelper.AddCheckbox(playbackmode, "Color Playback", Settings.ColorPlayback, (o, e) =>
-            {
-                Settings.ColorPlayback = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            var preview = GwenHelper.AddCheckbox(playbackmode, "Preview Mode", Settings.PreviewMode, (o, e) =>
-            {
-                Settings.PreviewMode = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            var recording = GwenHelper.AddCheckbox(playbackmode, "Recording Mode", Settings.Local.RecordingMode, (o, e) =>
-            {
-                Settings.Local.RecordingMode = ((Checkbox)o).IsChecked;
-            });
-            var framerate = GwenHelper.CreateHeaderPanel(parent, "Frame Control");
-            var smooth = GwenHelper.AddCheckbox(framerate, "Smooth Playback", Settings.SmoothPlayback, (o, e) =>
-            {
-                Settings.SmoothPlayback = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            ComboBox pbrate = GwenHelper.CreateLabeledCombobox(framerate, "Playback Rate:");
-            for (var i = 0; i < Constants.MotionArray.Length; i++)
-            {
-                var f = (Constants.MotionArray[i] / (float)Constants.PhysicsRate);
-                pbrate.AddItem(f + "x", f.ToString(CultureInfo.InvariantCulture), f);
-            }
-            pbrate.SelectByName(Settings.DefaultPlayback.ToString(CultureInfo.InvariantCulture));
-            pbrate.ItemSelected += (o, e) =>
-            {
-                Settings.DefaultPlayback = (float)e.SelectedItem.UserData;
-                Settings.Save();
-            };
-            var cbslowmo = GwenHelper.CreateLabeledCombobox(framerate, "Slowmo FPS:");
-            var fpsarray = new[] { 1, 2, 5, 10, 20 };
-            for (var i = 0; i < fpsarray.Length; i++)
-            {
-                cbslowmo.AddItem(fpsarray[i].ToString(), fpsarray[i].ToString(CultureInfo.InvariantCulture),
-                    fpsarray[i]);
-            }
-            cbslowmo.SelectByName(Settings.SlowmoSpeed.ToString(CultureInfo.InvariantCulture));
-            cbslowmo.ItemSelected += (o, e) =>
-            {
-                Settings.SlowmoSpeed = (int)e.SelectedItem.UserData;
-                Settings.Save();
-            };
-            smooth.Tooltip = "Interpolates frames from the base\nphysics rate of 40 frames/second\nup to 60 frames/second";
-        }
-        private void PopulateOverlay(ControlBase parent)
-        {
-            var offset = new Spinner(null)
-            {
-                Min = -999,
-                Max = 999,
-                Value = Settings.Local.TrackOverlayOffset,
-            };
-            offset.ValueChanged += (o, e) =>
-            {
-                Settings.Local.TrackOverlayOffset = (int)offset.Value;
-            };
-            var fixedspinner = new Spinner(null)
-            {
-                Min = 0,
-                Max = _editor.FrameCount,
-                Value = Settings.Local.TrackOverlayFixedFrame,
-            };
-            fixedspinner.ValueChanged += (o, e) =>
-            {
-                Settings.Local.TrackOverlayFixedFrame = (int)fixedspinner.Value;
-            };
-            void updatedisabled()
-            {
-                offset.IsDisabled = Settings.Local.TrackOverlayFixed;
-                fixedspinner.IsDisabled = !Settings.Local.TrackOverlayFixed;
-            }
-            var enabled = GwenHelper.AddCheckbox(parent, "Enabled", Settings.Local.TrackOverlay, (o, e) =>
-            {
-                Settings.Local.TrackOverlay = ((Checkbox)o).IsChecked;
-                updatedisabled();
-            });
-            GwenHelper.AddCheckbox(parent, "Fixed Frame", Settings.Local.TrackOverlayFixed, (o, e) =>
-            {
-                Settings.Local.TrackOverlayFixed = ((Checkbox)o).IsChecked;
-                updatedisabled();
-            });
-            GwenHelper.CreateLabeledControl(parent, "Frame Offset", offset);
-            GwenHelper.CreateLabeledControl(parent, "Frame ID", fixedspinner);
-            updatedisabled();
-            enabled.Tooltip = "Display an onion skin of the track\nat a specified offset for animation";
+            _ = GwenHelper.CreateLabeledControl(otherGroup, "Zoom Multiplier", zoomMultiplier);
         }
         private void PopulateTools(ControlBase parent)
         {
-            var bezier = GwenHelper.CreateHeaderPanel(parent, "Bezier Tool");
+            Panel bezierGroup = GwenHelper.CreateHeaderPanel(parent, "Bezier Tool");
 
-            var resolution = new Spinner(bezier)
+            Spinner resolution = new Spinner(bezierGroup)
             {
                 Min = 5,
                 Max = 100,
@@ -638,12 +534,12 @@ namespace linerider.UI
             };
             resolution.ValueChanged += (o, e) =>
             {
-                Settings.Bezier.Resolution = (int) ((Spinner)o).Value;
+                Settings.Bezier.Resolution = (int)((Spinner)o).Value;
                 Settings.Save();
             };
-            GwenHelper.CreateLabeledControl(bezier, "Resolution (Lines per 100 pixels)", resolution);
+            _ = GwenHelper.CreateLabeledControl(bezierGroup, "Resolution (Lines Per 100 Pixels)", resolution);
 
-            var nodeSize = new Spinner(bezier)
+            Spinner nodeSize = new Spinner(bezierGroup)
             {
                 Min = 5,
                 Max = 100,
@@ -655,16 +551,16 @@ namespace linerider.UI
                 Settings.Bezier.NodeSize = (int)((Spinner)o).Value;
                 Settings.Save();
             };
-            GwenHelper.CreateLabeledControl(bezier, "Size of the bezier curve nodes", nodeSize);
+            _ = GwenHelper.CreateLabeledControl(bezierGroup, "Size of the bezier curve nodes", nodeSize);
 
-            var bezierModeSelector = new RadioButtonGroup(bezier)
+            RadioButtonGroup bezierModeSelector = new RadioButtonGroup(bezierGroup)
             {
                 Dock = Dock.Top,
                 ShouldDrawBackground = false
             };
-            var directType = bezierModeSelector.AddOption("Direct Visualization Mode");
-            var traceType = bezierModeSelector.AddOption("Trace Visualization Mode");
-            switch ((Settings.BezierMode) Settings.Bezier.Mode)
+            RadioButton directType = bezierModeSelector.AddOption("Direct Visualization Mode");
+            RadioButton traceType = bezierModeSelector.AddOption("Trace Visualization Mode");
+            switch (Settings.Bezier.Mode)
             {
                 case Settings.BezierMode.Direct:
                     directType.Select();
@@ -675,53 +571,101 @@ namespace linerider.UI
             }
             directType.CheckChanged += (o, e) =>
             {
-                Settings.Bezier.Mode = (int)Settings.BezierMode.Direct;
+                Settings.Bezier.Mode = Settings.BezierMode.Direct;
                 Settings.Save();
             };
             traceType.CheckChanged += (o, e) =>
             {
-                Settings.Bezier.Mode = (int)Settings.BezierMode.Trace;
+                Settings.Bezier.Mode = Settings.BezierMode.Trace;
                 Settings.Save();
             };
 
-            var select = GwenHelper.CreateHeaderPanel(parent, "Select Tool -- Line Info");
-            var length = GwenHelper.AddCheckbox(select, "Show Length", Settings.Editor.ShowLineLength, (o, e) =>
+            Panel smoothpencilGroup = GwenHelper.CreateHeaderPanel(parent, "Smooth Pencil");
+            Spinner smUpdateSpeed = new Spinner(smoothpencilGroup)
+            {
+                Min = 0,
+                Max = 1000,
+                Value = Settings.SmoothPencil.smoothUpdateSpeed,
+            };
+            smUpdateSpeed.ValueChanged += (o, e) =>
+            {
+                Settings.SmoothPencil.smoothUpdateSpeed = (int)smUpdateSpeed.Value;
+                Settings.Save();
+            };
+            _ = GwenHelper.CreateLabeledControl(smoothpencilGroup, "Update Speed in Milliseconds", smUpdateSpeed);
+            smUpdateSpeed.Tooltip = "Determines how often the lines are dragged in milliseconds\nLeave at 0 to update as fast as your framerate allows";
+            Spinner smStabilizer = new Spinner(smoothpencilGroup)
+            {
+                Min = 1,
+                Max = 24,
+                Value = Settings.SmoothPencil.smoothStabilizer,
+            };
+            smStabilizer.ValueChanged += (o, e) =>
+            {
+                Settings.SmoothPencil.smoothStabilizer = (int)smStabilizer.Value;
+                Settings.Save();
+            };
+            _ = GwenHelper.CreateLabeledControl(smoothpencilGroup, "Stabilizer", smStabilizer);
+            smStabilizer.Tooltip = "Determines by how much your lines are dragged behind";
+
+            Panel selectGroup = GwenHelper.CreateHeaderPanel(parent, "Select Tool");
+
+            Checkbox smallknobs = GwenHelper.AddCheckbox(selectGroup, "Limit Line Knobs Size", Settings.LimitLineKnobsSize, (o, e) =>
+            {
+                Settings.LimitLineKnobsSize = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            //smallknobs.Tooltip = $"Make line knobs smaller at high zoom values ({Constants.MaxLimitedKnobSize}x and higher)";
+            smallknobs.Tooltip = $"Make line knobs smaller at {Constants.MaxLimitedKnobSize}x zoom and higher";
+
+            Panel lineGroup = GwenHelper.CreateHeaderPanel(selectGroup, "Line Info");
+            lineGroup.Dock = Dock.Left;
+            lineGroup.Margin = Margin.Zero;
+            Checkbox length = GwenHelper.AddCheckbox(lineGroup, "Show Length", Settings.Editor.ShowLineLength, (o, e) =>
             {
                 Settings.Editor.ShowLineLength = ((Checkbox)o).IsChecked;
                 Settings.Save();
             });
-            var angle = GwenHelper.AddCheckbox(select, "Show Angle", Settings.Editor.ShowLineAngle, (o, e) =>
+            Checkbox angle = GwenHelper.AddCheckbox(lineGroup, "Show Angle", Settings.Editor.ShowLineAngle, (o, e) =>
             {
                 Settings.Editor.ShowLineAngle = ((Checkbox)o).IsChecked;
                 Settings.Save();
             });
-            var showid = GwenHelper.AddCheckbox(select, "Show ID", Settings.Editor.ShowLineID, (o, e) =>
+            Checkbox showid = GwenHelper.AddCheckbox(lineGroup, "Show ID", Settings.Editor.ShowLineID, (o, e) =>
             {
                 Settings.Editor.ShowLineID = ((Checkbox)o).IsChecked;
                 Settings.Save();
             });
-            Panel panelSnap = GwenHelper.CreateHeaderPanel(parent, "Snapping");
-            var linesnap = GwenHelper.AddCheckbox(panelSnap, "Snap New Lines", Settings.Editor.SnapNewLines, (o, e) =>
+            Checkbox nohit = GwenHelper.AddCheckbox(lineGroup, "Don't Select Hit Lines", Settings.Editor.NoHitSelect, (o, e) =>
             {
-                Settings.Editor.SnapNewLines = ((Checkbox)o).IsChecked;
+                Settings.Editor.NoHitSelect = ((Checkbox)o).IsChecked;
                 Settings.Save();
             });
-            var movelinesnap = GwenHelper.AddCheckbox(panelSnap, "Snap Line Movement", Settings.Editor.SnapMoveLine, (o, e) =>
+
+            Panel lifelockGroup = GwenHelper.CreateHeaderPanel(selectGroup, "Lifelock Conditions");
+            lifelockGroup.Dock = Dock.Right;
+            lifelockGroup.Margin = Margin.Zero;
+            _ = GwenHelper.AddCheckbox(lifelockGroup, "Next Frame Constraints", Settings.Editor.LifeLockNoOrange, (o, e) =>
             {
-                Settings.Editor.SnapMoveLine = ((Checkbox)o).IsChecked;
+                Settings.Editor.LifeLockNoOrange = ((Checkbox)o).IsChecked;
                 Settings.Save();
             });
-            var gridsnap = GwenHelper.AddCheckbox(panelSnap, "Snap to displayed grids", Settings.Editor.SnapToGrid, (o, e) =>
+            _ = GwenHelper.AddCheckbox(lifelockGroup, "No Fakie Death", Settings.Editor.LifeLockNoFakie, (o, e) =>
             {
-                Settings.Editor.SnapToGrid = ((Checkbox)o).IsChecked;
+                Settings.Editor.LifeLockNoFakie = ((Checkbox)o).IsChecked;
                 Settings.Save();
             });
-            var forcesnap = GwenHelper.AddCheckbox(panelSnap, "Force X/Y snap", Settings.Editor.ForceXySnap, (o, e) =>
+
+            Panel snappingGroup = GwenHelper.CreateHeaderPanel(parent, "Snapping");
+
+            Panel snappingGroupBottom = new Panel(snappingGroup)
             {
-                Settings.Editor.ForceXySnap = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            var snapAngle = new Spinner(panelSnap)
+                Dock = Dock.Bottom,
+                ShouldDrawBackground = false,
+                AutoSizeToContents = true,
+                Margin = Margin.Zero,
+            };
+            Spinner snapAngle = new Spinner(snappingGroupBottom)
             {
                 Min = 0,
                 Max = 180,
@@ -734,56 +678,395 @@ namespace linerider.UI
                 ((Spinner)o).Value = Settings.Editor.XySnapDegrees;  // Re-display the rounded value
                 Settings.Save();
             };
-            GwenHelper.CreateLabeledControl(panelSnap, "X/Y snap degrees", snapAngle);
-            forcesnap.Tooltip = "Forces all lines drawn to\nsnap to multiples of a chosen angle";
+            ControlBase snapdegrees = GwenHelper.CreateLabeledControl(snappingGroupBottom, "X/Y Snap Degrees", snapAngle);
+
+            Panel snappingGroupLeft = new Panel(snappingGroup)
+            {
+                Dock = Dock.Left,
+                ShouldDrawBackground = false,
+                AutoSizeToContents = true,
+                Margin = Margin.Zero,
+            };
+            Checkbox linesnap = GwenHelper.AddCheckbox(snappingGroupLeft, "Snap New Lines", Settings.Editor.SnapNewLines, (o, e) =>
+            {
+                Settings.Editor.SnapNewLines = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            Checkbox movelinesnap = GwenHelper.AddCheckbox(snappingGroupLeft, "Snap Line Movement", Settings.Editor.SnapMoveLine, (o, e) =>
+            {
+                Settings.Editor.SnapMoveLine = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
             movelinesnap.Tooltip = "Snap to lines when using the\nselect tool to move a single line";
+
+            Panel snappingGroupRight = new Panel(snappingGroup)
+            {
+                Dock = Dock.Right,
+                ShouldDrawBackground = false,
+                AutoSizeToContents = true,
+                Margin = Margin.Zero,
+            };
+            Checkbox gridsnap = GwenHelper.AddCheckbox(snappingGroupRight, "Snap to displayed grids", Settings.Editor.SnapToGrid, (o, e) =>
+            {
+                Settings.Editor.SnapToGrid = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            Checkbox forcesnap = GwenHelper.AddCheckbox(snappingGroupRight, "Force X/Y snap", Settings.Editor.ForceXySnap, (o, e) =>
+            {
+                Settings.Editor.ForceXySnap = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            forcesnap.Tooltip = "Forces all lines drawn to\nsnap to multiples of a chosen angle";
+        }
+        private void PopulateInterfaceGeneral(ControlBase parent)
+        {
+            Panel generalGroup = GwenHelper.CreateHeaderPanel(parent, "General");
+            _ = GwenHelper.AddCheckbox(generalGroup, "Night Mode", Settings.NightMode, (o, e) =>
+            {
+                Settings.NightMode = ((Checkbox)o).IsChecked;
+                Settings.Save();
+                _canvas.RefreshCursors();
+            });
+            Checkbox preview = GwenHelper.AddCheckbox(generalGroup, "Preview Mode", Settings.PreviewMode, (o, e) =>
+            {
+                Settings.PreviewMode = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            Checkbox recording = GwenHelper.AddCheckbox(generalGroup, "Recording Mode", Settings.Local.RecordingMode, (o, e) =>
+            {
+                Settings.Local.RecordingMode = ((Checkbox)o).IsChecked;
+            });
+
+            Panel uiGroup = GwenHelper.CreateHeaderPanel(parent, "UI");
+            ComboBox uiScale = GwenHelper.CreateLabeledCombobox(uiGroup, "Scale *");
+
+            _ = uiScale.AddItem("Auto", "", 0f);
+            _ = uiScale.AddItem("100%", "", 1f);
+            _ = uiScale.AddItem("125%", "", 1.25f);
+            _ = uiScale.AddItem("150%", "", 1.5f);
+            _ = uiScale.AddItem("175%", "", 1.75f);
+            _ = uiScale.AddItem("200%", "", 2f);
+            _ = uiScale.AddItem("300%", "", 3f);
+            _ = uiScale.AddItem("400%", "", 4f);
+            uiScale.SelectByUserData(Settings.UIScale);
+
+            uiScale.ItemSelected += (o, e) =>
+            {
+                if (e.SelectedItem != null)
+                {
+                    Settings.UIScale = (float)e.SelectedItem.UserData;
+                    Settings.Save();
+                    _canvas.RefreshCursors();
+                }
+            };
+
+            _ = GwenHelper.AddCheckbox(uiGroup, "Show Zoom Bar", Settings.UIShowZoom, (o, e) =>
+            {
+                Settings.UIShowZoom = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            _ = GwenHelper.AddCheckbox(uiGroup, "Show Speed Control Buttons", Settings.UIShowSpeedButtons, (o, e) =>
+            {
+                Settings.UIShowSpeedButtons = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            _ = GwenHelper.CreateHintLabel(uiGroup, "* Restart required");
+            _ = GwenHelper.CreateHintLabel(uiGroup, "Scale is a Work In Progress feature,\nsome UI parts are not scalable yet.");
+        }
+        private void PopulateColors(ControlBase parent)
+        {
+            Panel editorColors = GwenHelper.CreateHeaderPanel(parent, "Editor");
+            _ = GwenHelper.CreateLabeledColorInput(editorColors, "Background", Settings.Colors.EditorBg, (o, color) =>
+            {
+                Settings.Colors.EditorBg = color.Value;
+                Settings.Save();
+            });
+            _ = GwenHelper.CreateLabeledColorInput(editorColors, "Lines", Settings.Colors.EditorLine, (o, color) =>
+            {
+                Settings.Colors.EditorLine = color.Value;
+                Settings.Save();
+            });
+
+            Panel nightColors = GwenHelper.CreateHeaderPanel(parent, "Editor (Night Mode)");
+            _ = GwenHelper.CreateLabeledColorInput(nightColors, "Background", Settings.Colors.EditorNightBg, (o, color) =>
+            {
+                Settings.Colors.EditorNightBg = color.Value;
+                Settings.Save();
+            });
+            _ = GwenHelper.CreateLabeledColorInput(nightColors, "Lines", Settings.Colors.EditorNightLine, (o, color) =>
+            {
+                Settings.Colors.EditorNightLine = color.Value;
+                Settings.Save();
+            });
+
+            Panel exportColors = GwenHelper.CreateHeaderPanel(parent, "Export / Preview Mode");
+            _ = GwenHelper.CreateLabeledColorInput(exportColors, "Background", Settings.Colors.ExportBg, (o, color) =>
+            {
+                bool isDefaultColor = _editor.HasDefaultTrackBackground;
+
+                Settings.Colors.ExportBg = color.Value;
+                Settings.Save();
+
+                if (isDefaultColor)
+                    _editor.SetDefaultTrackColors();
+            });
+            _ = GwenHelper.CreateLabeledColorInput(exportColors, "Lines", Settings.Colors.ExportLine, (o, color) =>
+            {
+                bool isDefaultColor = _editor.HasDefaultTrackLineColor;
+
+                Settings.Colors.ExportLine = color.Value;
+                Settings.Save();
+
+                if (isDefaultColor)
+                    _editor.SetDefaultTrackColors();
+            });
+
+            Panel lineTypesColors = GwenHelper.CreateHeaderPanel(parent, "Line types");
+            _ = GwenHelper.CreateLabeledColorInput(lineTypesColors, "Standard", Settings.Colors.StandardLine, (o, color) =>
+            {
+                Settings.Colors.StandardLine = color.Value;
+                Settings.Save();
+                _editor.RedrawAllLines();
+            });
+            _ = GwenHelper.CreateLabeledColorInput(lineTypesColors, "Acceleration", Settings.Colors.AccelerationLine, (o, color) =>
+            {
+                Settings.Colors.AccelerationLine = color.Value;
+                Settings.Save();
+                _editor.RedrawAllLines();
+            });
+            _ = GwenHelper.CreateLabeledColorInput(lineTypesColors, "Scenery", Settings.Colors.SceneryLine, (o, color) =>
+            {
+                Settings.Colors.SceneryLine = color.Value;
+                Settings.Save();
+                _editor.RedrawAllLines();
+            });
+        }
+        private void PopulateRider(ControlBase parent)
+        {
+            string manualUrl = $"{Constants.GithubPageHeader}/tree/main/Customization/Rider";
+
+            Panel generalGroup = GwenHelper.CreateHeaderPanel(parent, "General");
+
+            ComboBox boshSkinCombobox = GwenHelper.CreateLabeledCombobox(generalGroup, "Rider:");
+            _ = boshSkinCombobox.AddItem(Constants.DefaultName, Constants.InternalDefaultName, Constants.InternalDefaultName);
+            string[] riderPaths = Directory.GetDirectories(Path.Combine(Settings.Local.UserDirPath, Constants.RidersFolderName));
+            foreach (string riderPath in riderPaths)
+            {
+                string riderName = Path.GetFileName(riderPath);
+                _ = boshSkinCombobox.AddItem(riderName, riderName, riderName);
+            }
+            boshSkinCombobox.ItemSelected += (o, e) =>
+            {
+                Settings.SelectedBoshSkin = (string)e.SelectedItem.UserData;
+                Debug.WriteLine($"Selected Rider: \"{Settings.SelectedBoshSkin}\"");
+                Settings.Save();
+            };
+
+            ComboBox scarfCombobox = GwenHelper.CreateLabeledCombobox(generalGroup, "Scarf:");
+            _ = scarfCombobox.AddItem(Constants.DefaultName, Constants.InternalDefaultName, Constants.InternalDefaultName);
+            string[] scarfPaths = Directory.GetFiles(Path.Combine(Settings.Local.UserDirPath, Constants.ScarvesFolderName));
+            foreach (string scarfPath in scarfPaths)
+            {
+                string ext = Path.GetExtension(scarfPath).ToLower();
+                string scarfFilename = Path.GetFileName(scarfPath);
+                string scarfName = ext == ".txt" || ext == ".png" ? Path.GetFileNameWithoutExtension(scarfPath) : Path.GetFileName(scarfPath);
+                _ = scarfCombobox.AddItem(scarfName, scarfFilename, scarfFilename);
+            }
+
+            scarfCombobox.ItemSelected += (o, e) =>
+            {
+                Settings.SelectedScarf = (string)e.SelectedItem.UserData;
+                Debug.WriteLine($"Selected Scarf: \"{Settings.SelectedScarf}\"");
+                Settings.Save();
+            };
+
+            boshSkinCombobox.SelectByUserData(Settings.SelectedBoshSkin);
+            scarfCombobox.SelectByUserData(Settings.SelectedScarf);
+            boshSkinCombobox.Width = 150;
+            scarfCombobox.Width = 150;
+
+            Panel scarfGroup = GwenHelper.CreateHeaderPanel(parent, "Scarf Settings *");
+
+            Spinner scarvesAmount = new Spinner(parent)
+            {
+                Min = 1,
+                Max = int.MaxValue - 1,
+                Value = Settings.ScarfAmount,
+            };
+            scarvesAmount.ValueChanged += (o, e) =>
+            {
+                Settings.ScarfAmount = (int)((Spinner)o).Value;
+                Settings.Save();
+            };
+            _ = GwenHelper.CreateLabeledControl(scarfGroup, "Scarves Amount:", scarvesAmount);
+
+            Spinner scarfSegmentsMain = new Spinner(parent)
+            {
+                Min = 1,
+                Max = int.MaxValue - 1,
+                IncrementSize = 2,
+                Value = Settings.ScarfSegmentsPrimary,
+            };
+            scarfSegmentsMain.ValueChanged += (o, e) =>
+            {
+                Settings.ScarfSegmentsPrimary = (int)((Spinner)o).Value;
+                Settings.Save();
+            };
+            _ = GwenHelper.CreateLabeledControl(scarfGroup, "Segments (Primary Scarf):", scarfSegmentsMain);
+
+            Spinner scarfSegmentsSecondary = new Spinner(parent)
+            {
+                Min = 1,
+                Max = int.MaxValue - 1,
+                IncrementSize = 2,
+                Value = Settings.ScarfSegmentsSecondary,
+            };
+            scarfSegmentsSecondary.ValueChanged += (o, e) =>
+            {
+                int value = (int)((Spinner)o).Value;
+                Settings.ScarfSegmentsSecondary = value;
+                Settings.Save();
+            };
+            _ = GwenHelper.CreateLabeledControl(scarfGroup, "Segments (Secondary Scarves):", scarfSegmentsSecondary);
+            _ = GwenHelper.CreateHintLabel(scarfGroup, "* Restart required");
+
+            Button openManualBtn = new Button(parent)
+            {
+                Dock = Dock.Bottom,
+                Text = "Open customization manual (GitHub)",
+                Alignment = Pos.CenterH | Pos.CenterV,
+                Margin = new Margin(10, 0, 10, 10),
+            };
+            openManualBtn.Clicked += (o, e) => GameCanvas.OpenUrl(manualUrl);
+
+            Button forceReloadBtn = new Button(parent)
+            {
+                Dock = Dock.Bottom,
+                Text = "Force reload rider and scarf",
+                Alignment = Pos.CenterH | Pos.CenterV,
+                Margin = new Margin(10, 0, 10, 10),
+            };
+            forceReloadBtn.Clicked += (o, e) => RiderLoader.ReloadAll();
+        }
+        private void PopulateHotkeys(ControlBase parent) => _ = new Widgets.HotkeysEditor(parent);
+        private void PopulateUserData(ControlBase parent)
+        {
+            bool isPortable = Settings.Computed.IsUserDirPortable;
+
+            Panel currPathGroup = GwenHelper.CreateHeaderPanel(parent, "Current User Folder Location");
+            Label currPathLabel = new Label(currPathGroup)
+            {
+                TextColor = System.Drawing.Color.Gray,
+                Dock = Dock.Top,
+                Text = Settings.Local.UserDirPath,
+            };
+            Button openUserDirBtn = new Button(currPathGroup)
+            {
+                Dock = Dock.Bottom,
+                Text = "Open directory",
+                Alignment = Pos.CenterH | Pos.CenterV,
+                Margin = new Margin(10, 5, 10, 10),
+            };
+            openUserDirBtn.Clicked += (o, e) => GameCanvas.OpenUrl(Settings.Local.UserDirPath);
+
+            Panel portableGroup = GwenHelper.CreateHeaderPanel(parent, "Portable Mode");
+            Label portableStatusLabel = new Label(null)
+            {
+                Dock = Dock.Left,
+                Text = "Is Portable:",
+            };
+            Label portableStatus = new Label(null)
+            {
+                TextColor = isPortable ? System.Drawing.Color.Green : System.Drawing.Color.Gray,
+                Dock = Dock.Left,
+                Text = isPortable.ToString(),
+                Margin = new Margin(5, 0, 0, 0),
+            };
+            ControlBase portableControls = new ControlBase(portableGroup)
+            {
+                Children =
+                {
+                    portableStatusLabel,
+                    portableStatus,
+                },
+                AutoSizeToContents = true,
+                Dock = Dock.Top,
+            };
+
+            Button transferUserDirBtn = new Button(portableGroup)
+            {
+                Dock = Dock.Top,
+                Text = "Switch " + (isPortable ? "from" : "to") + " portable mode",
+                Alignment = Pos.CenterH | Pos.CenterV,
+                Margin = new Margin(10, 5, 10, 0),
+            };
+            transferUserDirBtn.Clicked += (o, e) =>
+            {
+                UserFolderTransferrerWindow wnd = new UserFolderTransferrerWindow(_canvas, _editor);
+                wnd.ShowCentered();
+                _ = Close();
+            };
         }
         private void PopulateOther(ControlBase parent)
         {
-            var updates = GwenHelper.CreateHeaderPanel(parent, "Updates");
+            Panel audioGroup = GwenHelper.CreateHeaderPanel(parent, "Audio");
 
-            var showid = GwenHelper.AddCheckbox(updates, "Check For Updates", Settings.CheckForUpdates, (o, e) =>
+            Label volumeLabel = new Label(null)
+            {
+                Dock = Dock.Left,
+                Text = "Volume",
+            };
+
+            Checkbox mute = GwenHelper.AddCheckbox(audioGroup, "Mute", Settings.MuteAudio, (o, e) =>
+            {
+                Settings.MuteAudio = ((Checkbox)o).IsChecked;
+                Settings.Save();
+            });
+            mute.Dock = Dock.Right;
+
+            HorizontalSlider volume = new HorizontalSlider(null)
+            {
+                Dock = Dock.Fill,
+                Min = 0,
+                Max = 100,
+                Value = Settings.Volume,
+                Margin = new Margin(10, 0, 20, 0)
+            };
+            volume.ValueChanged += (o, e) =>
+            {
+                Settings.Volume = (float)volume.Value;
+                Settings.Save();
+            };
+
+            ControlBase audioControls = new ControlBase(audioGroup)
+            {
+                Children =
+                {
+                    volumeLabel,
+                    volume,
+                    mute
+                },
+                AutoSizeToContents = true,
+                Dock = Dock.Top,
+            };
+
+            Panel updatesGroup = GwenHelper.CreateHeaderPanel(parent, "Updates");
+
+            Checkbox showid = GwenHelper.AddCheckbox(updatesGroup, "Check For Updates", Settings.CheckForUpdates, (o, e) =>
             {
                 Settings.CheckForUpdates = ((Checkbox)o).IsChecked;
                 Settings.Save();
             });
 
-            var showChangelog = GwenHelper.AddCheckbox(updates, "Show LRTran Changelog", Settings.showChangelog, (o, e) =>
+            Panel windowGroup = GwenHelper.CreateHeaderPanel(parent, "Window");
+            Checkbox maximizeWin = GwenHelper.AddCheckbox(windowGroup, "Maximize Window On Startup", Settings.startWindowMaximized, (o, e) =>
             {
-                Settings.showChangelog = ((Checkbox)o).IsChecked;
+                Settings.startWindowMaximized = ((Checkbox)o).IsChecked;
                 Settings.Save();
             });
 
-            var mainWindowSettings = GwenHelper.CreateHeaderPanel(parent, "Window Launch Size");
-            var mainWindowWidth = new Spinner(mainWindowSettings)
-            {
-                Min = 1,
-                Max = int.MaxValue - 1,
-                Value = Settings.mainWindowWidth,
-            };
-            mainWindowWidth.ValueChanged += (o, e) =>
-            {
-                Settings.mainWindowWidth = (int)((Spinner)o).Value;
-                Settings.Save();
-            };
-            GwenHelper.CreateLabeledControl(mainWindowSettings, "Main Window Width (Current: " + (Program.GetWindowWidth()) + ")", mainWindowWidth);
-            var mainWindowHeight = new Spinner(mainWindowSettings)
-            {
-                Min = 1,
-                Max = int.MaxValue - 1,
-                Value = Settings.mainWindowHeight,
-            };
-            mainWindowHeight.ValueChanged += (o, e) =>
-            {
-                Settings.mainWindowHeight = (int)((Spinner)o).Value;
-                Settings.Save();
-            };
-            GwenHelper.CreateLabeledControl(mainWindowSettings, "Main Window Height (Current: " + (Program.GetWindowHeight()) + ")", mainWindowHeight);
-
-
-
-            var saveSettings = GwenHelper.CreateHeaderPanel(parent, "Saves");
-            var autosaveMinutes = new Spinner(saveSettings)
+            Panel savesGroup = GwenHelper.CreateHeaderPanel(parent, "Saves");
+            Spinner autosaveMinutes = new Spinner(savesGroup)
             {
                 Min = 1,
                 Max = int.MaxValue - 1,
@@ -794,9 +1077,9 @@ namespace linerider.UI
                 Settings.autosaveMinutes = (int)((Spinner)o).Value;
                 Settings.Save();
             };
-            GwenHelper.CreateLabeledControl(saveSettings, "Minutes between autosaves", autosaveMinutes);
+            _ = GwenHelper.CreateLabeledControl(savesGroup, "Minutes Between Autosaves", autosaveMinutes);
 
-            var autosaveChanges = new Spinner(saveSettings)
+            Spinner autosaveChanges = new Spinner(savesGroup)
             {
                 Min = 1,
                 Max = int.MaxValue - 1,
@@ -807,47 +1090,64 @@ namespace linerider.UI
                 Settings.autosaveChanges = (int)((Spinner)o).Value;
                 Settings.Save();
             };
-            GwenHelper.CreateLabeledControl(saveSettings, "Min changes to start autosaving", autosaveChanges);
+            _ = GwenHelper.CreateLabeledControl(savesGroup, "Minimum Changes to Autosave", autosaveChanges);
 
-            ComboBox defaultSaveType = GwenHelper.CreateLabeledCombobox(saveSettings, "Default Save As Format:");
-            defaultSaveType.AddItem(".trk", "", ".trk");
-            defaultSaveType.AddItem(".json", "", ".json");
-            defaultSaveType.AddItem(".sol", "", ".sol");
+            TextBox autosaveName = new TextBox(savesGroup)
+            {
+                Text = Settings.AutosavePrefix,
+                Width = 100,
+            };
+            autosaveName.TextChanged += (o, e) =>
+            {
+                string name = ((TextBox)o).Text;
+
+                if (name.IndexOfAny(Path.GetInvalidFileNameChars()) < 0)
+                {
+                    Settings.AutosavePrefix = name;
+                    Settings.Save();
+                }
+            };
+            _ = GwenHelper.CreateLabeledControl(savesGroup, "Autosave Prefix", autosaveName);
+
+            ComboBox defaultSaveType = GwenHelper.CreateLabeledCombobox(savesGroup, "Default Save As Format:");
+            _ = defaultSaveType.AddItem(".trk", "", ".trk");
+            _ = defaultSaveType.AddItem(".json", "", ".json");
+            _ = defaultSaveType.AddItem(".sol", "", ".sol");
             defaultSaveType.ItemSelected += (o, e) =>
             {
-                Settings.DefaultSaveFormat = (String)e.SelectedItem.UserData;
+                Settings.DefaultSaveFormat = (string)e.SelectedItem.UserData;
                 Settings.Save();
             };
 
-            ComboBox defaultQuicksaveType = GwenHelper.CreateLabeledCombobox(saveSettings, "Default Quicksave Format:");
-            defaultQuicksaveType.AddItem(".trk", "", ".trk");
-            defaultQuicksaveType.AddItem(".json", "", ".json");
-            defaultQuicksaveType.AddItem(".sol", "", ".sol");
+            ComboBox defaultQuicksaveType = GwenHelper.CreateLabeledCombobox(savesGroup, "Default Quicksave Format:");
+            _ = defaultQuicksaveType.AddItem(".trk", "", ".trk");
+            _ = defaultQuicksaveType.AddItem(".json", "", ".json");
+            _ = defaultQuicksaveType.AddItem(".sol", "", ".sol");
             defaultQuicksaveType.ItemSelected += (o, e) =>
             {
-                Settings.DefaultQuicksaveFormat = (String)e.SelectedItem.UserData;
+                Settings.DefaultQuicksaveFormat = (string)e.SelectedItem.UserData;
                 Settings.Save();
             };
 
-            ComboBox defaultAutosaveType = GwenHelper.CreateLabeledCombobox(saveSettings, "Default Autosave Format:");
-            defaultAutosaveType.AddItem(".trk", "", ".trk");
-            defaultAutosaveType.AddItem(".json", "", ".json");
-            defaultAutosaveType.AddItem(".sol", "", ".sol");
+            ComboBox defaultAutosaveType = GwenHelper.CreateLabeledCombobox(savesGroup, "Default Autosave Format:");
+            _ = defaultAutosaveType.AddItem(".trk", "", ".trk");
+            _ = defaultAutosaveType.AddItem(".json", "", ".json");
+            _ = defaultAutosaveType.AddItem(".sol", "", ".sol");
             defaultAutosaveType.SelectByUserData(Settings.DefaultAutosaveFormat);
             defaultAutosaveType.ItemSelected += (o, e) =>
             {
-                Settings.DefaultAutosaveFormat = (String)e.SelectedItem.UserData;
+                Settings.DefaultAutosaveFormat = (string)e.SelectedItem.UserData;
                 Settings.Save();
             };
 
-            ComboBox defaultCrashBackupType = GwenHelper.CreateLabeledCombobox(saveSettings, "Default Crash Backup Format:");
-            defaultCrashBackupType.AddItem(".trk", "", ".trk");
-            defaultCrashBackupType.AddItem(".json", "", ".json");
-            defaultCrashBackupType.AddItem(".sol", "", ".sol");
+            ComboBox defaultCrashBackupType = GwenHelper.CreateLabeledCombobox(savesGroup, "Default Crash Backup Format:");
+            _ = defaultCrashBackupType.AddItem(".trk", "", ".trk");
+            _ = defaultCrashBackupType.AddItem(".json", "", ".json");
+            _ = defaultCrashBackupType.AddItem(".sol", "", ".sol");
             defaultCrashBackupType.SelectByUserData(Settings.DefaultCrashBackupFormat);
             defaultCrashBackupType.ItemSelected += (o, e) =>
             {
-                Settings.DefaultCrashBackupFormat = (String)e.SelectedItem.UserData;
+                Settings.DefaultCrashBackupFormat = (string)e.SelectedItem.UserData;
                 Settings.Save();
             };
 
@@ -855,184 +1155,55 @@ namespace linerider.UI
             defaultQuicksaveType.SelectByUserData(Settings.DefaultQuicksaveFormat);
             defaultAutosaveType.SelectByUserData(Settings.DefaultAutosaveFormat);
             defaultAutosaveType.SelectByUserData(Settings.DefaultCrashBackupFormat);
+
+            Button openHomePageBtn = new Button(parent)
+            {
+                Dock = Dock.Bottom,
+                Text = "Open project page (GitHub)",
+                Alignment = Pos.CenterH | Pos.CenterV,
+                Margin = new Margin(10, 0, 10, 10),
+            };
+            openHomePageBtn.Clicked += (o, e) => GameCanvas.OpenUrl(Constants.GithubPageHeader);
+
+            Button showChangelogButton = new Button(parent)
+            {
+                Dock = Dock.Bottom,
+                Text = $"Show changelog ({AssemblyInfo.Version})",
+                Alignment = Pos.CenterH | Pos.CenterV,
+                Margin = new Margin(10, 0, 10, 10),
+            };
+            showChangelogButton.Clicked += (o, e) => _canvas.ShowChangelog();
         }
-        private void PopulateRiderSettings(ControlBase parent)
+        private void PopulateRBLAnimation(ControlBase parent)
         {
-            var scarfSettingPanel = GwenHelper.CreateHeaderPanel(parent, "Scarf Settings");
-            var riderSettingPanel = GwenHelper.CreateHeaderPanel(parent, "Rider Settings");
+            Panel generalGroup = GwenHelper.CreateHeaderPanel(parent, "RatherBeLunar's Magic Animator Settings");
 
-            ComboBox scarfCombobox = GwenHelper.CreateLabeledCombobox(scarfSettingPanel, "Selected Scarf:");
-            scarfCombobox.AddItem("Default", "*default*", "*default*");
-            string[] scarfPaths = Directory.GetFiles(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Documents/LRA/Scarves"));
-            for (int i = 0; i < scarfPaths.Length; i++)
-            {
-                string scarfNames = Path.GetFileName(scarfPaths[i]);
-                scarfCombobox.AddItem(scarfNames, scarfNames, scarfNames);
-            }
+            //            GwenHelper.AddCheckbox(rblHeader, "Reference frame based animation", Settings.velocityReferenceFrameAnimation, (o, e) =>
+            //            {
+            //                Settings.velocityReferenceFrameAnimation = ((Checkbox)o).IsChecked;
+            //                Settings.Save();
+            //            });
 
-            scarfCombobox.ItemSelected += (o, e) =>
-            {
-                Settings.SelectedScarf = (String)e.SelectedItem.UserData;
-                Debug.WriteLine("Selected Scarf: \"" + Settings.SelectedScarf + "\"");
-                Settings.Save();
-            };
-
-            var scarfSegments = new Spinner(parent)
-            {
-                Min = 1,
-                Max = int.MaxValue - 1,
-                Value = Settings.ScarfSegments,
-            };
-            scarfSegments.ValueChanged += (o, e) =>
-            {
-                Settings.ScarfSegments = (int)((Spinner)o).Value;
-                Settings.Save();
-            };
-            GwenHelper.CreateLabeledControl(scarfSettingPanel, "Scarf Segments (Needs Restart)", scarfSegments);
-
-            var multiScarfAmount = new Spinner(parent)
-            {
-                Min = 1,
-                Max = int.MaxValue - 1,
-                Value = Settings.multiScarfAmount,
-            };
-            multiScarfAmount.ValueChanged += (o, e) =>
-            {
-                Settings.multiScarfAmount = (int)((Spinner)o).Value;
-                Settings.Save();
-            };
-            GwenHelper.CreateLabeledControl(scarfSettingPanel, "Multi-Scarf Amount (Needs Restart)", multiScarfAmount);
-
-            var multiScarfSegments = new Spinner(parent)
-            {
-                Min = 1,
-                Max = int.MaxValue - 1,
-                Value = Settings.multiScarfSegments,
-            };
-            multiScarfSegments.ValueChanged += (o, e) =>
-            {
-                Settings.multiScarfSegments = (int)((Spinner)o).Value;
-                Settings.Save();
-            };
-            GwenHelper.CreateLabeledControl(scarfSettingPanel, "Multi-Scarf Segments (Needs Restart)", multiScarfSegments);
-
-            var showid = GwenHelper.AddCheckbox(scarfSettingPanel, "Apply Custom Scarf to Rider png", Settings.customScarfOnPng, (o, e) =>
-            {
-                Settings.customScarfOnPng = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-            ComboBox boshSkinCombobox = GwenHelper.CreateLabeledCombobox(riderSettingPanel, "Selected Rider:");
-            boshSkinCombobox.AddItem("Default", "*default*", "*default*");
-
-
-            string[] riderPaths = Directory.GetDirectories(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Documents/LRA/Riders"));
-            for (int i = 0; i < riderPaths.Length; i++)
-            {
-                String riderNames = Path.GetFileName(riderPaths[i]);
-                boshSkinCombobox.AddItem(riderNames, riderNames, riderNames);
-            }
-            boshSkinCombobox.ItemSelected += (o, e) =>
-            {
-                Settings.SelectedBoshSkin = (String)e.SelectedItem.UserData; ;
-                Debug.WriteLine("Selected rider Skin: \"" + Settings.SelectedBoshSkin + "\"");
-                Settings.Save();
-            };
-
-            scarfCombobox.SelectByUserData(Settings.SelectedScarf);
-            boshSkinCombobox.SelectByUserData(Settings.SelectedBoshSkin);
-        }
-
-        private void PopulateDiscordSettings(ControlBase parent)
-        {
-            var discordHeader = GwenHelper.CreateHeaderPanel(parent, "Discord Activity Settings");
-
-            var showid = GwenHelper.AddCheckbox(discordHeader, "Enable Discord Activity (Needs Restart to Disable)", Settings.discordActivityEnabled, (o, e) =>
-            {
-                Settings.discordActivityEnabled = ((Checkbox)o).IsChecked;
-                Settings.Save();
-            });
-
-            ComboBox activity1 = GwenHelper.CreateLabeledCombobox(discordHeader, "Line 1 Text 1:");
-            ComboBox activity2 = GwenHelper.CreateLabeledCombobox(discordHeader, "Line 1 Text 2:");
-            ComboBox activity3 = GwenHelper.CreateLabeledCombobox(discordHeader, "Line 2 Text 1:");
-            ComboBox activity4 = GwenHelper.CreateLabeledCombobox(discordHeader, "Line 2 Text 2:");
-            ComboBox[] boxArr = { activity1, activity2, activity3, activity4 };
-            for (int i = 0; i < 4; i++)
-            {
-                boxArr[i].AddItem("None", "none", "none");
-                boxArr[i].AddItem("Selected Tool", "toolText", "toolText");
-                boxArr[i].AddItem("Number of Unsaved Changes", "unsavedChangesText", "unsavedChangesText");
-                boxArr[i].AddItem("Track Name", "trackText", "trackText");
-                boxArr[i].AddItem("Amount of Lines", "lineText", "lineText");
-                boxArr[i].AddItem("Version", "versionText", "versionText");
-            }
-            activity1.SelectByUserData(Settings.discordActivity1);
-            activity2.SelectByUserData(Settings.discordActivity2);
-            activity3.SelectByUserData(Settings.discordActivity3);
-            activity4.SelectByUserData(Settings.discordActivity4);
-
-            activity1.ItemSelected += (o, e) =>
-            {
-                Settings.discordActivity1 = (String)e.SelectedItem.UserData; ;
-                Settings.Save();
-            };
-            activity2.ItemSelected += (o, e) =>
-            {
-                Settings.discordActivity2 = (String)e.SelectedItem.UserData; ;
-                Settings.Save();
-            };
-            activity3.ItemSelected += (o, e) =>
-            {
-                Settings.discordActivity3 = (String)e.SelectedItem.UserData; ;
-                Settings.Save();
-            };
-            activity4.ItemSelected += (o, e) =>
-            {
-                Settings.discordActivity4 = (String)e.SelectedItem.UserData; ;
-                Settings.Save();
-            };
-
-            ComboBox largeImageKey = GwenHelper.CreateLabeledCombobox(discordHeader, "Image:");
-            largeImageKey.AddItem("LRTran App Icon", "lrl", "lrl");
-            largeImageKey.AddItem(":boshbless:", "bosh_pray", "bosh_pray");
-            largeImageKey.SelectByUserData(Settings.largeImageKey);
-            largeImageKey.ItemSelected += (o, e) =>
-            {
-                Settings.largeImageKey = (String)e.SelectedItem.UserData; ;
-                Settings.Save();
-            };
-        }
-
-        private void PopulateRBLSettings(ControlBase parent)
-        {
-            var rblHeader = GwenHelper.CreateHeaderPanel(parent, "RatherBeLunar's Magic Animator Settings");
-
-//            GwenHelper.AddCheckbox(rblHeader, "Reference frame based animation", Settings.velocityReferenceFrameAnimation, (o, e) =>
-//            {
-//                Settings.velocityReferenceFrameAnimation = ((Checkbox)o).IsChecked;
-//                Settings.Save();
-//            });
-
-            GwenHelper.AddCheckbox(rblHeader, "Convert lines sent to previous frames to scenery", Settings.recededLinesAsScenery, (o, e) =>
+            _ = GwenHelper.AddCheckbox(generalGroup, "Convert lines sent to previous frames to scenery", Settings.recededLinesAsScenery, (o, e) =>
             {
                 Settings.recededLinesAsScenery = ((Checkbox)o).IsChecked;
                 Settings.Save();
             });
 
-            GwenHelper.AddCheckbox(rblHeader, "Convert lines sent to forward frames to scenery", Settings.forwardLinesAsScenery, (o, e) =>
+            _ = GwenHelper.AddCheckbox(generalGroup, "Convert lines sent to forward frames to scenery", Settings.forwardLinesAsScenery, (o, e) =>
             {
                 Settings.forwardLinesAsScenery = ((Checkbox)o).IsChecked;
                 Settings.Save();
             });
 
-            Spinner animationVelXSpinner = new Spinner(rblHeader)
+            Spinner animationVelXSpinner = new Spinner(generalGroup)
             {
                 Dock = Dock.Bottom,
                 Max = 1000,
                 Min = -1000,
                 Value = Settings.animationRelativeVelX
             };
-            Spinner animationVelYSpinner = new Spinner(rblHeader)
+            Spinner animationVelYSpinner = new Spinner(generalGroup)
             {
                 Dock = Dock.Bottom,
                 Max = 1000,
@@ -1049,77 +1220,8 @@ namespace linerider.UI
                 Settings.animationRelativeVelY = (float)((Spinner)o).Value;
                 Settings.Save();
             };
-            GwenHelper.CreateLabeledControl(rblHeader, "Relative Animation X Velocity", animationVelXSpinner);
-            GwenHelper.CreateLabeledControl(rblHeader, "Relative Animation Y Velocity", animationVelYSpinner);
-
-        }
-
-        private void Setup()
-        {
-            var cat = _prefcontainer.Add("Settings");
-            var page = AddPage(cat, "Editor");
-            PopulateEditor(page);
-            page = AddPage(cat, "Playback");
-            PopulatePlayback(page);
-            page = AddPage(cat, "Tools");
-            PopulateTools(page);
-            page = AddPage(cat, "Environment");
-            PopulateModes(page);
-            page = AddPage(cat, "Camera");
-            PopulateCamera(page);
-            page = AddPage(cat, "Lines");
-            PopulateLines(page);
-            cat = _prefcontainer.Add("Application");
-            page = AddPage(cat, "Audio");
-            PopulateAudio(page);
-            page = AddPage(cat, "Keybindings");
-            PopulateKeybinds(page);
-            page = AddPage(cat, "Other");
-            PopulateOther(page);
-            cat = _prefcontainer.Add("LRTran");
-            page = AddPage(cat, "Rider");
-            PopulateRiderSettings(page);
-            page = AddPage(cat, "Discord");
-            PopulateDiscordSettings(page);
-            cat = _prefcontainer.Add("Addons");
-            page = AddPage(cat, "Animation");
-            PopulateRBLSettings(page);
-            if (Settings.SettingsPane >= _tabscount && _focus == null)
-            {
-                Settings.SettingsPane = 0;
-                _focus = page;
-                page.Show();
-            }
-
-        }
-        private void CategorySelected(object sender, ItemSelectedEventArgs e)
-        {
-            if (_focus != e.SelectedItem.UserData)
-            {
-                if (_focus != null)
-                {
-                    _focus.Hide();
-                }
-                _focus = (ControlBase)e.SelectedItem.UserData;
-                _focus.Show();
-                Settings.SettingsPane = (int)_focus.UserData;
-                Settings.Save();
-            }
-        }
-        private ControlBase AddPage(CollapsibleCategory category, string name)
-        {
-            var btn = category.Add(name);
-            Panel panel = new Panel(this);
-            panel.Dock = Dock.Fill;
-            panel.Padding = Padding.Five;
-            panel.Hide();
-            panel.UserData = _tabscount;
-            btn.UserData = panel;
-            category.Selected += CategorySelected;
-            if (_tabscount == Settings.SettingsPane)
-                btn.Press();
-            _tabscount += 1;
-            return panel;
+            _ = GwenHelper.CreateLabeledControl(generalGroup, "Relative Animation X Velocity", animationVelXSpinner);
+            _ = GwenHelper.CreateLabeledControl(generalGroup, "Relative Animation Y Velocity", animationVelYSpinner);
         }
     }
 }

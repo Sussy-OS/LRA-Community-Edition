@@ -1,23 +1,20 @@
+using Gwen;
+using Gwen.Controls;
+using linerider.Drawing;
+using linerider.Utils;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
-using Gwen;
-using Gwen.Controls;
-using linerider.Tools;
-using linerider.Utils;
-using linerider.IO;
-using linerider.Drawing;
 
 namespace linerider.UI
 {
     public class ExportWindow : DialogBase
     {
-        private RichLabel _descriptionlabel;
-        private Label _error;
-        private MainWindow _game;
-        private const string howto = "You are about to export your track as a video file. Make sure the end of the track is marked by a flag. " +
-            "It will be located in your line rider user directory (Documents/LRA).\r\n" +
+        private readonly RichLabel _descriptionlabel;
+        private readonly Label _error;
+        private readonly MainWindow _game;
+        private readonly string howto = "You are about to export your track as a video file. Make sure the end of the track is marked by a flag. " +
+            $"It will be located in your line rider user directory in the \"{Constants.RendersFolderName}\" folder.\n\n" +
             "Please allow some minutes depending on your computer speed. " +
             "The window will become unresponsive during this time.\n\n" +
             "After recording, a console window may open to encode the video. " +
@@ -40,7 +37,8 @@ namespace linerider.UI
             Title = "Export Video";
             _descriptionlabel = new RichLabel(this)
             {
-                AutoSizeToContents = true
+                AutoSizeToContents = true,
+                Padding = new Padding(0, 10, 0, 0),
             };
             if (!SafeFrameBuffer.CanRecord)
             {
@@ -58,7 +56,7 @@ namespace linerider.UI
                 Dock = Dock.Top,
                 TextColor = Color.Red,
                 IsHidden = true,
-                Margin = new Margin(0, 0, 0, 10)
+                Padding = new Padding(0, 10, 0, 0),
             };
             AutoSizeToContents = true;
             MinimumSize = new Size(400, 300);
@@ -72,8 +70,8 @@ namespace linerider.UI
         }
         private CheckProperty AddPropertyCheckbox(PropertyTable prop, string label, bool value)
         {
-            var check = new CheckProperty(null);
-            prop.Add(label, check);
+            CheckProperty check = new CheckProperty(null);
+            _ = prop.Add(label, check);
             check.IsChecked = value;
             return check;
         }
@@ -99,25 +97,33 @@ namespace linerider.UI
                 Width = 200,
                 Margin = new Margin(0, 0, 0, 10)
             };
-            var table = proptree.Add("Output Settings", 150);
-            var qualitycb = new ComboBoxProperty(table);
+            PropertyTable table = proptree.Add("Output Settings", 150);
+            ComboBoxProperty qualitycb = new ComboBoxProperty(table);
 
-            foreach (var item in resolutions)
+            foreach (KeyValuePair<string, Size> item in resolutions)
             {
-                qualitycb.AddItem(item.Key);
+                _ = qualitycb.AddItem(item.Key);
             }
-            
-            table.Add("Quality", qualitycb);
+            qualitycb.SetValue(Settings.RecordResolution);
+            qualitycb.ValueChanged += (o, e) =>
+            {
+                Settings.RecordResolution = qualitycb.Value;
+                Settings.Save();
+            };
 
-            var startOnCurrentFrameCheck = AddPropertyCheckbox(
-                table,
-                "Start on Current Frame",
-                false);
-            var smoothcheck = AddPropertyCheckbox(
+            _ = table.Add("Quality", qualitycb);
+
+            CheckProperty smoothcheck = AddPropertyCheckbox(
                 table,
                 "Smooth Playback",
                 Settings.RecordSmooth);
-            var music = AddPropertyCheckbox(
+            smoothcheck.ValueChanged += (o, e) =>
+            {
+                Settings.RecordSmooth = smoothcheck.IsChecked;
+                Settings.Save();
+            };
+
+            CheckProperty music = AddPropertyCheckbox(
                 table,
                 "Save Music",
                 !Settings.MuteAudio && Settings.RecordMusic);
@@ -125,31 +131,67 @@ namespace linerider.UI
             {
                 music.Disable();
             }
+            music.ValueChanged += (o, e) =>
+            {
+                Settings.RecordMusic = music.IsChecked;
+                Settings.Save();
+            };
+
             table = proptree.Add("Overlay settings", 150);
-            var ppf = AddPropertyCheckbox(
+            CheckProperty ppf = AddPropertyCheckbox(
                 table,
                 "Show P/f",
-                Settings.Recording.ShowPpf);
-            var fps = AddPropertyCheckbox(
+                Settings.RecordShowPpf);
+            ppf.ValueChanged += (o, e) =>
+            {
+                Settings.RecordShowPpf = ppf.IsChecked;
+                Settings.Save();
+            };
+            CheckProperty fps = AddPropertyCheckbox(
                 table,
                 "Show FPS",
-                Settings.Recording.ShowFps);
-            var tools = AddPropertyCheckbox(
+                Settings.RecordShowFps);
+            fps.ValueChanged += (o, e) =>
+            {
+                Settings.RecordShowFps = fps.IsChecked;
+                Settings.Save();
+            };
+            CheckProperty tools = AddPropertyCheckbox(
                 table,
                 "Show Tools",
-                Settings.Recording.ShowTools);
-            var hitTest = AddPropertyCheckbox(
+                Settings.RecordShowTools);
+            tools.ValueChanged += (o, e) =>
+            {
+                Settings.RecordShowTools = tools.IsChecked;
+                Settings.Save();
+            };
+            CheckProperty hitTest = AddPropertyCheckbox(
                table,
                "Show Hit Test",
-               Settings.Editor.HitTest);
-            var colorTriggers = AddPropertyCheckbox(
+               Settings.RecordShowHitTest);
+            hitTest.ValueChanged += (o, e) =>
+            {
+                Settings.RecordShowHitTest = hitTest.IsChecked;
+                Settings.Save();
+            };
+            CheckProperty colorTriggers = AddPropertyCheckbox(
                 table,
                 "Enable Color Triggers",
-                Settings.Recording.EnableColorTriggers);
-            var resIndZoom = AddPropertyCheckbox(
+                Settings.RecordShowColorTriggers);
+            colorTriggers.ValueChanged += (o, e) =>
+            {
+                Settings.RecordShowColorTriggers = colorTriggers.IsChecked;
+                Settings.Save();
+            };
+            CheckProperty resIndZoom = AddPropertyCheckbox(
                 table,
                 "Res-Independent Zoom",
-                Settings.Recording.ResIndZoom);
+                Settings.RecordResIndependentZoom);
+            resIndZoom.ValueChanged += (o, e) =>
+            {
+                Settings.RecordResIndependentZoom = resIndZoom.IsChecked;
+                Settings.Save();
+            };
             proptree.ExpandAll();
             Button Cancel = new Button(bottomrow)
             {
@@ -159,7 +201,7 @@ namespace linerider.UI
             };
             Cancel.Clicked += (o, e) =>
             {
-                Close();
+                _ = Close();
             };
             Button ok = new Button(bottomrow)
             {
@@ -172,15 +214,14 @@ namespace linerider.UI
             }
             ok.Clicked += (o, e) =>
                 {
-                    Close();
+                    _ = Close();
                     Settings.Recording.ShowPpf = ppf.IsChecked;
                     Settings.Recording.ShowFps = fps.IsChecked;
                     Settings.Recording.ShowTools = tools.IsChecked;
                     Settings.Recording.EnableColorTriggers = colorTriggers.IsChecked;
                     Settings.Recording.ResIndZoom = resIndZoom.IsChecked;
                     Settings.Recording.ShowHitTest = hitTest.IsChecked;
-                    Settings.currentFrame = startOnCurrentFrameCheck.IsChecked;
-                    
+
                     Settings.RecordSmooth = smoothcheck.IsChecked;
                     if (!music.IsDisabled)
                     {
@@ -189,40 +230,36 @@ namespace linerider.UI
 
                     try
                     {
-                        var size = resolutions[qualitycb.SelectedItem.Text];
-                        Settings.RecordingWidth = size.Width;
-                        Settings.RecordingHeight = size.Height;
+                        Size size = resolutions[qualitycb.SelectedItem.Text];
+                        Settings.Recording.RecordingWidth = size.Width;
+                        Settings.Recording.RecordingHeight = size.Height;
                     }
                     catch (KeyNotFoundException)
                     {
                         throw new Exception("Invalid resolution: " + qualitycb.SelectedItem.Text);
                     }
 
-                    Settings.Save();
+                    Settings.ForceSave();
                     Record();
                 };
         }
         private bool CheckRecord()
         {
-            if (_editor.GetFlag() == null)
+            if (!_editor.HasFlag && !Settings.LockTrackDuration)
             {
                 SetError("No flag detected. Place one at the end of the track\nso the recorder knows where to stop.");
                 return false;
             }
-            else if (_editor.Name == Utils.Constants.DefaultTrackName)
+            else if (_editor.Name == Constants.InternalDefaultTrackName)
             {
                 SetError("Please save your track before recording.");
                 return false;
             }
             return true;
         }
-        private void Record()
-        {
-            IO.TrackRecorder.RecordTrack(
+        private void Record() => IO.TrackRecorder.RecordTrack(
                 _game,
                 Settings.RecordSmooth,
-                Settings.RecordMusic && !Settings.MuteAudio,
-                Settings.currentFrame ? (Settings.RecordSmooth ? (int)(_game.Track.Offset * 1.5) : _game.Track.Offset) : 0);
-        }
+                Settings.RecordMusic && !Settings.MuteAudio);
     }
 }

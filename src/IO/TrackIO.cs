@@ -16,17 +16,13 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using OpenTK;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Text;
-using linerider.Audio;
-using linerider.Utils;
 using linerider.Game;
 using linerider.IO.json;
+using linerider.Utils;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Utf8Json;
 
 namespace linerider.IO
@@ -40,31 +36,26 @@ namespace linerider.IO
             }
         }
 
-
-        public static string[] EnumerateTrackFiles(string folder)
-        {
-            return Directory.GetFiles(folder, "*.*")
+        public static string[] EnumerateTrackFiles(string folder) => Directory.GetFiles(folder, "*.*")
                 .Where(x =>
                     x.EndsWith(".trk", StringComparison.OrdinalIgnoreCase) ||
                     x.EndsWith(".json", StringComparison.OrdinalIgnoreCase)).
                     OrderByDescending(x =>
                     {
-                        var fn = Path.GetFileName(x);
-                        var index = fn.IndexOf(" ", StringComparison.Ordinal);
+                        string fn = Path.GetFileName(x);
+                        int index = fn.IndexOf(" ", StringComparison.Ordinal);
                         if (index != -1)
                         {
-                            int pt;
-                            if (int.TryParse(fn.Remove(index), out pt))
+                            if (int.TryParse(fn.Remove(index), out int pt))
                                 return pt;
                         }
                         return 0;
                     }).ToArray();
-        }
         public static string[] EnumerateSolFiles(string folder)
         {
-            var ret = Directory.GetFiles(folder, "*.*")
+            string[] ret = Directory.GetFiles(folder, "*.*")
                 .Where(x =>
-                    (x.EndsWith(".sol", StringComparison.OrdinalIgnoreCase))).ToArray();
+                    x.EndsWith(".sol", StringComparison.OrdinalIgnoreCase)).ToArray();
             Array.Sort(ret, StringComparer.CurrentCultureIgnoreCase);
             return ret;
         }
@@ -81,24 +72,21 @@ namespace linerider.IO
             }
             foreach (GameLine l in trk.LineLookup.Values)
             {
-                var scenery = l as SceneryLine;
-                if (scenery != null)
+                if (l is SceneryLine scenery)
                 {
                     if (Math.Abs(scenery.Width - 1) > 0.0001f)
                     {
                         ret[TrackFeatures.scenerywidth] = true;
                     }
                 }
-                var red = l as RedLine;
-                if (red != null)
+                if (l is RedLine red)
                 {
                     if (red.Multiplier != 1)
                     {
                         ret[TrackFeatures.redmultiplier] = true;
                     }
                 }
-                var stl = l as StandardLine;
-                if (stl != null)
+                if (l is StandardLine stl)
                 {
                     if (stl.Trigger != null)
                     {
@@ -113,7 +101,7 @@ namespace linerider.IO
             {
                 ret[TrackFeatures.songinfo] = true;
             }
-            
+
             if (trk.Remount)
             {
                 ret[TrackFeatures.remount] = true;
@@ -124,16 +112,28 @@ namespace linerider.IO
         /// Checks a relative filename for validity
         public static bool CheckValidFilename(string relativefilename)
         {
-            if (Path.GetFileName(relativefilename) != relativefilename ||
-                Path.IsPathRooted(relativefilename) ||
-                relativefilename.Length == 0)
+            if (relativefilename.Length == 0)
                 return false;
+
+            char[] invalidchars = Path.GetInvalidFileNameChars();
+            for (int i = 0; i < relativefilename.Length; i++)
+            {
+                if (invalidchars.Contains(relativefilename[i]))
+                {
+                    return false;
+                }
+            }
+
+            if (Path.GetFileName(relativefilename) != relativefilename ||
+                Path.IsPathRooted(relativefilename))
+                return false;
+
             try
             {
-                //the ctor checks validity pretty well
-                //it also does not have the requirement of the file existing
-                var info = new FileInfo(relativefilename);
-                var attr = info.Attributes;
+                // The ctor checks validity pretty well.
+                // It also does not have the requirement of the file existing.
+                FileInfo info = new FileInfo(relativefilename);
+                FileAttributes attr = info.Attributes;
                 if (attr != (FileAttributes)(-1) &&
                 attr.HasFlag(FileAttributes.Directory))
                     throw new ArgumentException();
@@ -143,23 +143,15 @@ namespace linerider.IO
             {
                 return false;
             }
-            var invalidchars = Path.GetInvalidFileNameChars();
-            for (var i = 0; i < relativefilename.Length; i++)
-            {
-                if (invalidchars.Contains(relativefilename[i]))
-                {
-                    return false;
-                }
-            }
 
             return true;
         }
         public static string GetTrackName(string trkfile)
         {
             string trackname = Path.GetFileNameWithoutExtension(trkfile);
-            var dirname = Path.GetDirectoryName(trkfile);
-            var dirs = Directory.GetDirectories(Constants.TracksDirectory);
-            foreach (var dir in dirs)
+            string dirname = Path.GetDirectoryName(trkfile);
+            string[] dirs = Directory.GetDirectories(Path.Combine(Settings.Local.UserDirPath, Constants.TracksFolderName));
+            foreach (string dir in dirs)
             {
                 if (string.Equals(
                     dirname,
@@ -172,25 +164,21 @@ namespace linerider.IO
             }
             return trackname;
         }
-        public static string GetTrackDirectory(Track track)
-        {
-            return Utils.Constants.TracksDirectory +
-            track.Name +
-            Path.DirectorySeparatorChar;
-        }
+
+        public static string GetTrackDirectory(Track track) => Path.Combine(Settings.Local.UserDirPath, Constants.TracksFolderName, track.Name) + Path.DirectorySeparatorChar;
         public static string ExtractSaveName(string filepath)
         {
-            var filename = Path.GetFileName(filepath);
-            var index = filename.IndexOf(" ", StringComparison.Ordinal);
+            string filename = Path.GetFileName(filepath);
+            int index = filename.IndexOf(" ", StringComparison.Ordinal);
             if (index != -1)
             {
-                var id = filename.Remove(index);
-                if (int.TryParse(id, out int pt))
+                string id = filename.Remove(index);
+                if (int.TryParse(id, out _))
                 {
                     filename = filename.Remove(0, index + 1);
                 }
             }
-            var ext = filename.IndexOf(".trk", StringComparison.OrdinalIgnoreCase);
+            int ext = filename.IndexOf(".trk", StringComparison.OrdinalIgnoreCase);
             if (ext != -1)
             {
                 filename = filename.Remove(ext);
@@ -199,33 +187,33 @@ namespace linerider.IO
         }
         public static bool QuickSave(Track track)
         {
-            if (track.Name == Constants.DefaultTrackName)
+            if (track.Name == Constants.InternalDefaultTrackName)
                 return false;
-            var dir = GetTrackDirectory(track);
-            if (track.Filename != null)
+            string dir = GetTrackDirectory(track);
+            if (!string.IsNullOrEmpty(track.Filename))
             {
-                // if we loaded this file from /Tracks and not 
+                // If we loaded this file from /Tracks and not 
                 // /Tracks/{trackname}/file.trk then it doesnt have a folder
-                // the user will have to decide one. we will not quicksave it.
-                if (!track.Filename.StartsWith(dir, StringComparison.OrdinalIgnoreCase))
+                // the user will have to decide one. We will not quicksave it.
+                if (!track.Filename.Contains(Path.Combine(Constants.TracksFolderName, track.Name)))
                     return false;
 
             }
             if (Directory.Exists(dir))
             {
-                var quicksaveString = ("quicksave_" + DateTime.Now.Month + "." + DateTime.Now.Day + "." + DateTime.Now.Year + "_" + DateTime.Now.Hour + "." + DateTime.Now.Minute);
+                string quicksaveString = Constants.QuicksavePrefix + " " + DateTime.Now.ToString("yyyy'-'MM'-'dd'-'HH'-'mm'-'ss");
                 try
                 {
                     switch (Settings.DefaultQuicksaveFormat)
                     {
                         case ".trk": //.trk
-                            SaveTrackToFile(track, quicksaveString);
+                            _ = SaveTrackToFile(track, quicksaveString);
                             break;
                         case ".json": //.json
-                            SaveTrackToJsonFile(track, quicksaveString);
+                            _ = SaveTrackToJsonFile(track, quicksaveString);
                             break;
                         case ".sol": //.sol
-                            SaveToSOL(track, quicksaveString);
+                            _ = SaveToSOL(track, quicksaveString);
                             break;
                     }
                 }
@@ -242,33 +230,35 @@ namespace linerider.IO
         public static string SaveToSOL(Track track, string savename)
         {
             int saveindex = GetSaveIndex(track);
-            var filename = SOLWriter.SaveTrack(track, saveindex + " " + savename);
+            string filename = SOLWriter.SaveTrack(track, saveindex + " " + savename);
             track.Filename = filename;
             return filename;
         }
         public static void ExportTrackData(Track track, string fn, int frames, ICamera camera)
         {
-            var timeline = new linerider.Game.Timeline(
+            Timeline timeline = new Timeline(
                 track);
             timeline.Restart(track.GetStart(), 1);
-            timeline.GetFrame(frames);
+            _ = timeline.GetFrame(frames);
             camera.SetTimeline(timeline);
             List<RiderData> data = new List<RiderData>();
             for (int idx = 0; idx < frames; idx++)
             {
-                var frame = timeline.GetFrame(idx);
-                var framedata = new RiderData();
-                framedata.Frame = idx;
-                framedata.Points = new List<track_json.point_json>();
+                Rider frame = timeline.GetFrame(idx);
+                RiderData framedata = new RiderData
+                {
+                    Frame = idx,
+                    Points = new List<track_json.point_json>()
+                };
                 for (int i = 0; i < frame.Body.Length; i++)
                 {
-                    var point = frame.Body[i];
+                    SimulationPoint point = frame.Body[i];
                     framedata.Points.Add(new track_json.point_json()
                     {
                         x = point.Location.X,
                         y = point.Location.Y
                     });
-                    var camframe = camera.GetFrameCamera(idx);
+                    OpenTK.Vector2d camframe = camera.GetFrameCamera(idx);
                     framedata.CameraCenter = new track_json.point_json()
                     {
                         x = camframe.X,
@@ -278,23 +268,23 @@ namespace linerider.IO
                 data.Add(framedata);
             }
 
-            using (var file = File.Create(fn))
+            using (FileStream file = File.Create(fn))
             {
-                var bytes = JsonSerializer.Serialize<List<RiderData>>(data);
+                byte[] bytes = JsonSerializer.Serialize(data);
                 file.Write(bytes, 0, bytes.Length);
             }
         }
         public static string SaveTrackToFile(Track track, string savename)
         {
             int saveindex = GetSaveIndex(track);
-            var filename = TRKWriter.SaveTrack(track, saveindex + " " + savename);
+            string filename = TRKWriter.SaveTrack(track, saveindex + " " + savename);
             track.Filename = filename;
             return filename;
         }
         public static string SaveTrackToJsonFile(Track track, string savename)
         {
             int saveindex = GetSaveIndex(track);
-            var filename = JSONWriter.SaveTrack(track, saveindex + " " + savename);
+            string filename = JSONWriter.SaveTrack(track, saveindex + " " + savename);
             track.Filename = filename;
             return filename;
         }
@@ -320,40 +310,41 @@ namespace linerider.IO
         }
         public static void CreateAutosave(Track track)
         {
-            var dir = GetTrackDirectory(track);
-            if (track.Name.Equals("*")|| track.Name.Equals("<untitled>")) { dir = Utils.Constants.TracksDirectory + "Unnamed Track" + Path.DirectorySeparatorChar;}
+            string dir = GetTrackDirectory(track);
+            if (track.Name.Equals("*") || track.Name.Equals(Constants.InternalDefaultTrackName))
+                dir = Path.Combine(Settings.Local.UserDirPath, Constants.TracksFolderName, Constants.DefaultTrackName);
             if (!Directory.Exists(dir))
-                Directory.CreateDirectory(dir);
+                _ = Directory.CreateDirectory(dir);
 
-            String autosaveString = ("autosave_" + DateTime.Now.Month + "." + DateTime.Now.Day + "." + DateTime.Now.Year + "_" + DateTime.Now.Hour + "." + DateTime.Now.Minute);
+            string autosaveString = Settings.AutosavePrefix + " " + DateTime.Now.ToString("yyyy'-'MM'-'dd'-'HH'-'mm'-'ss");
             switch (Settings.DefaultAutosaveFormat)
             {
                 case ".trk":
-                    TRKWriter.SaveTrack(track, autosaveString);
+                    _ = TRKWriter.SaveTrack(track, autosaveString);
                     break;
                 case ".json":
-                    JSONWriter.SaveTrack(track, autosaveString);
+                    _ = JSONWriter.SaveTrack(track, autosaveString);
                     break;
                 case ".sol":
-                    SOLWriter.SaveTrack(track, autosaveString);
+                    _ = SOLWriter.SaveTrack(track, autosaveString);
                     break;
             }
         }
         public static void CreateTestFromTrack(Track track)
         {
-            var timeline = new linerider.Game.Timeline(
+            Timeline timeline = new Timeline(
                 track);
             timeline.Restart(track.GetStart(), 1);
-            int framecount = 40 * 60 * 5;
+            int framecount = Constants.PhysicsRate * Constants.FrameRate * 5;
 
-            var filename = TRKWriter.SaveTrack(track, track.Name + ".test");
-            if (System.IO.File.Exists(filename + ".result"))
-                System.IO.File.Delete(filename + ".result");
-            using (var f = System.IO.File.Create(filename + ".result"))
+            string filename = TRKWriter.SaveTrack(track, track.Name + ".test");
+            if (File.Exists(filename + ".result"))
+                File.Delete(filename + ".result");
+            using (FileStream f = File.Create(filename + ".result"))
             {
-                var bw = new BinaryWriter(f);
-                bw.Write((int)framecount);
-                var state = timeline.GetFrame(framecount);
+                BinaryWriter bw = new BinaryWriter(f);
+                bw.Write(framecount);
+                Rider state = timeline.GetFrame(framecount);
                 for (int i = 0; i < state.Body.Length; i++)
                 {
                     bw.Write(state.Body[i].Location.X);
@@ -363,27 +354,27 @@ namespace linerider.IO
         }
         public static bool TestCompare(Track track, string dir)
         {
-            var testfile = dir + track.Name + ".test.trk.result";
+            string testfile = dir + track.Name + ".test.trk.result";
             if (!File.Exists(testfile))
             {
                 return false;
             }
-            using (var file =
+            using (FileStream file =
                     File.Open(testfile, FileMode.Open))
             {
-                var br = new BinaryReader(file);
-                var frame = br.ReadInt32();
-                var timeline = new linerider.Game.Timeline(
+                BinaryReader br = new BinaryReader(file);
+                int frame = br.ReadInt32();
+                Timeline timeline = new Timeline(
                     track);
                 timeline.Restart(track.GetStart(), 1);
                 //track.Chunks.fg.PrintMetrics();
-                var state = timeline.GetFrame(frame);
+                Rider state = timeline.GetFrame(frame);
                 for (int i = 0; i < state.Body.Length; i++)
                 {
-                    var x = br.ReadDouble();
-                    var y = br.ReadDouble();
-                    var riderx = state.Body[i].Location.X;
-                    var ridery = state.Body[i].Location.Y;
+                    double x = br.ReadDouble();
+                    double y = br.ReadDouble();
+                    double riderx = state.Body[i].Location.X;
+                    double ridery = state.Body[i].Location.Y;
                     if (x != riderx || y != ridery)
                         return false;
                 }
@@ -393,24 +384,18 @@ namespace linerider.IO
 
         private static int GetSaveIndex(Track track)
         {
-            var dir = GetTrackDirectory(track);
-
-            if (track.Name.Equals("<untitled>"))
-            {
-                dir = Utils.Constants.TracksDirectory + "Unnamed Track" + Path.DirectorySeparatorChar;
-            }
-            
+            string dir = GetTrackDirectory(track);
+            if (track.Name.Equals(Constants.InternalDefaultTrackName))
+                dir = Path.Combine(Settings.Local.UserDirPath, Constants.TracksFolderName, Constants.DefaultTrackName);
             if (!Directory.Exists(dir))
-            {
-                Directory.CreateDirectory(dir);
-            }
-            var trackfiles =
-                TrackIO.EnumerateTrackFiles(dir);
+                _ = Directory.CreateDirectory(dir);
+            string[] trackfiles =
+                EnumerateTrackFiles(dir);
             int saveindex = 0;
-            for (var i = 0; i < trackfiles.Length; i++)
+            for (int i = 0; i < trackfiles.Length; i++)
             {
-                var s = Path.GetFileNameWithoutExtension(trackfiles[i]);
-                var index = s.IndexOf(" ", StringComparison.Ordinal);
+                string s = Path.GetFileNameWithoutExtension(trackfiles[i]);
+                int index = s.IndexOf(" ", StringComparison.Ordinal);
                 if (index != -1)
                 {
                     s = s.Remove(index);

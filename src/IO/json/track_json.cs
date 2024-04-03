@@ -33,16 +33,16 @@ namespace linerider.IO.json
         public string creator { get; set; }
         public string description { get; set; }
         public float startZoom { get; set; }
-        public int bgR { get; set; }
-        public int bgG { get; set; }
-        public int bgB { get; set; }
-        public int lineR { get; set; }
-        public int lineG { get; set; }
-        public int lineB { get; set; }
+        public int bgR { get; set; } = Settings.Colors.ExportBg.R;
+        public int bgG { get; set; } = Settings.Colors.ExportBg.G;
+        public int bgB { get; set; } = Settings.Colors.ExportBg.B;
+        public int lineR { get; set; } = Settings.Colors.ExportLine.R;
+        public int lineG { get; set; } = Settings.Colors.ExportLine.G;
+        public int lineB { get; set; } = Settings.Colors.ExportLine.B;
         public bool zeroStart { get; set; }
-        public float yGravity = 1; //Default grav
-        public float xGravity = 0; //Default grav
-        public double gravityWellSize = 10; //Default grav well size
+        public float yGravity = 1; // Default gravity
+        public float xGravity = 0; // Default gravity
+        public double gravityWellSize = 10; // Default Gravity Well Size
         public int duration { get; set; }
         public string version { get; set; }
         public point_json startPosition { get; set; }
@@ -52,76 +52,12 @@ namespace linerider.IO.json
         public List<zoomtrigger_json> triggers { get; set; }
         public List<gametrigger_json> gameTriggers { get; set; }
 
-
-        public bool ShouldSerializezeroStart()
-        {
-            return zeroStart;
-        }
-        public bool ShouldSerializecreator()
-        {
-            if (creator != null && creator.Length != 0)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        public bool ShouldSerializetriggers()
-        {
-            if (triggers != null && triggers.Count != 0)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        public bool ShouldSerializeduration()
-        {
-            if (duration > 0)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        public bool ShouldSerializedescription()
-        {
-            if (!string.IsNullOrEmpty(description))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        public bool ShouldSerializelinesArrayCompressed()
-        {
-            if (!string.IsNullOrEmpty(linesArrayCompressed))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        public bool ShouldSerializelinesArray()
-        {
-            if (linesArray != null && linesArray.Length != 0)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
+        public bool ShouldSerializezeroStart() => zeroStart;
+        public bool ShouldSerializecreator() => creator != null && creator.Length != 0;
+        public bool ShouldSerializetriggers() => triggers != null && triggers.Count != 0;
+        public bool ShouldSerializeduration() => duration > 0;
+        public bool ShouldSerializedescription() => !string.IsNullOrEmpty(description);
+        public bool ShouldSerializelinesArrayCompressed() => !string.IsNullOrEmpty(linesArrayCompressed);
+        public bool ShouldSerializelinesArray() => linesArray != null && linesArray.Length != 0;
     }
 }

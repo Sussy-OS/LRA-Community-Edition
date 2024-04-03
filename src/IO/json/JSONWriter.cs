@@ -1,12 +1,10 @@
-using OpenTK;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.IO;
-using Utf8Json;
-using System.Diagnostics;
 using linerider.Game;
 using linerider.IO.json;
+using linerider.Utils;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using Utf8Json;
 
 namespace linerider.IO
 {
@@ -14,25 +12,27 @@ namespace linerider.IO
     {
         public static string SaveTrack(Track trk, string savename)
         {
-            var sw = Stopwatch.StartNew();
-            track_json trackobj = new track_json();
-            trackobj.label = trk.Name;
-            trackobj.startPosition = new track_json.point_json()
+            _ = Stopwatch.StartNew();
+            track_json trackobj = new track_json
             {
-                x = trk.StartOffset.X,
-                y = trk.StartOffset.Y
+                label = trk.Name,
+                startPosition = new track_json.point_json()
+                {
+                    x = trk.StartOffset.X,
+                    y = trk.StartOffset.Y
+                },
+                startZoom = trk.StartZoom,
+                zeroStart = trk.ZeroStart,
+                yGravity = trk.YGravity,
+                xGravity = trk.XGravity,
+                gravityWellSize = trk.GravityWellSize,
+                bgR = trk.BGColorR,
+                bgG = trk.BGColorG,
+                bgB = trk.BGColorB,
+                lineR = trk.LineColorR,
+                lineG = trk.LineColorG,
+                lineB = trk.LineColorB
             };
-            trackobj.startZoom = trk.StartZoom;
-            trackobj.zeroStart = trk.ZeroStart;
-            trackobj.yGravity = trk.YGravity;
-            trackobj.xGravity = trk.XGravity;
-            trackobj.gravityWellSize = trk.GravityWellSize;
-            trackobj.bgR = trk.BGColorR;
-            trackobj.bgG = trk.BGColorG;
-            trackobj.bgB = trk.BGColorB;
-            trackobj.lineR = trk.LineColorR;
-            trackobj.lineG = trk.LineColorG;
-            trackobj.lineB = trk.LineColorB;
 
             int ver = trk.GetVersion();
             switch (ver)
@@ -44,19 +44,19 @@ namespace linerider.IO
                     trackobj.version = "6.2";
                     break;
             }
-            var sort = trk.GetSortedLines();
+            GameLine[] sort = trk.GetSortedLines();
             trackobj.linesArray = new object[sort.Length][];
             trackobj.gameTriggers = new List<track_json.gametrigger_json>();
             int idx = 0;
-            foreach (var line in sort)
+            foreach (GameLine line in sort)
             {
                 line_json jline = new line_json();
                 switch (line.Type)
                 {
-                    case LineType.Blue:
+                    case LineType.Standard:
                         jline.type = 0;
                         break;
-                    case LineType.Red:
+                    case LineType.Acceleration:
                         jline.type = 1;
                         break;
                     case LineType.Scenery:
@@ -64,8 +64,8 @@ namespace linerider.IO
                         break;
                 }
                 jline.id = line.ID;
-                jline.x1 = line.Position.X;
-                jline.y1 = line.Position.Y;
+                jline.x1 = line.Position1.X;
+                jline.y1 = line.Position1.Y;
                 jline.x2 = line.Position2.X;
                 jline.y2 = line.Position2.Y;
                 if (line is StandardLine stl)
@@ -83,7 +83,7 @@ namespace linerider.IO
                 }
                 trackobj.linesArray[idx++] = line_to_linearrayline(jline);
             }
-            foreach (var trigger in trk.Triggers)
+            foreach (GameTrigger trigger in trk.Triggers)
             {
                 switch (trigger.TriggerType)
                 {
@@ -120,14 +120,15 @@ namespace linerider.IO
                         break;
                 }
             }
-            var dir = TrackIO.GetTrackDirectory(trk);
-            if (trk.Name.Equals("<untitled>")) { dir = Utils.Constants.TracksDirectory + "Unnamed Track" + Path.DirectorySeparatorChar; }
+            string dir = TrackIO.GetTrackDirectory(trk);
+            if (trk.Name.Equals(Constants.InternalDefaultTrackName))
+                dir = Path.Combine(Settings.Local.UserDirPath, Constants.TracksFolderName, Constants.DefaultTrackName);
             if (!Directory.Exists(dir))
-                Directory.CreateDirectory(dir);
-            var filename = dir + savename + ".track.json";
-            using (var file = File.Create(filename))
+                _ = Directory.CreateDirectory(dir);
+            string filename = Path.Combine(dir, savename + ".track.json");
+            using (FileStream file = File.Create(filename))
             {
-                var bytes = JsonSerializer.Serialize<track_json>(trackobj);
+                byte[] bytes = JsonSerializer.Serialize(trackobj);
                 file.Write(bytes, 0, bytes.Length);
             }
             return filename;

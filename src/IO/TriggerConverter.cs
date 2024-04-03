@@ -1,13 +1,6 @@
-﻿using OpenTK;
-using System;
+﻿using linerider.Game;
+using linerider.Utils;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Text;
-using linerider.Audio;
-using linerider.Game;
-using System.Diagnostics;
 
 namespace linerider.IO
 {
@@ -20,10 +13,10 @@ namespace linerider.IO
         public static List<GameTrigger> ConvertTriggers(List<LineTrigger> triggers, Track track)
         {
             List<GameTrigger> gametriggers = new List<GameTrigger>();
-            const int minute = 40 * 60;
+            const int minute = Constants.PhysicsRate * 60;
             int lasthit = 0;
-            var rider = track.GetStart();
-            var hittest = new HitTestManager();
+            Rider rider = track.GetStart();
+            HitTestManager hittest = new HitTestManager();
             int i = 1;
             int hitframe = -1;
             LineTrigger activetrigger = null;
@@ -31,16 +24,16 @@ namespace linerider.IO
             GameTrigger newtrigger = null;
             do
             {
-                var collisions = new LinkedList<int>();
+                LinkedList<int> collisions = new LinkedList<int>();
                 rider = rider.Simulate(
                     track.Grid,
                     track.Bones,
                     collisions);
                 hittest.AddFrame(collisions);
                 LineTrigger hittrigger = null;
-                foreach (var lineid in collisions)
+                foreach (int lineid in collisions)
                 {
-                    foreach (var trigger in triggers)
+                    foreach (LineTrigger trigger in triggers)
                     {
                         if (trigger.LineID == lineid)
                         {
@@ -63,7 +56,7 @@ namespace linerider.IO
                 }
                 if (activetrigger != null)
                 {
-                    var delta = i - hitframe;
+                    int delta = i - hitframe;
                     if (!activetrigger.Activate(delta, ref zoom))
                     {
                         newtrigger.ZoomTarget = zoom;
@@ -78,7 +71,7 @@ namespace linerider.IO
                 }
                 i++;
             }
-            while (i - lasthit < (minute * 2)); // be REALLY sure, 2 minutes.
+            while (i - lasthit < (minute * 2)); // Be REALLY sure, 2 minutes.
             return gametriggers;
         }
     }

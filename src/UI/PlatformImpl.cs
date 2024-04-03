@@ -16,18 +16,17 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-using System;
-using System.Diagnostics;
-using System.Windows.Forms;
-using System.Threading;
 using OpenTK;
+using System;
+using System.Threading;
+using System.Windows.Forms;
 
 namespace linerider.UI
 {
     public class PlatformImpl : Gwen.Platform.Neutral.PlatformImplementation
     {
         public MouseCursor CurrentCursor = MouseCursor.Default;
-        private MainWindow game;
+        private readonly MainWindow game;
         public PlatformImpl(MainWindow game)
         {
             this.game = game;
@@ -51,13 +50,13 @@ namespace linerider.UI
             staThread.SetApartmentState(ApartmentState.STA);
             staThread.Start();
             staThread.Join();
-            // at this point either you have clipboard data or an exception
+            // At this point either you have clipboard data or an exception
             return ret;
         }
         public override string GetClipboardText()
         {
-            // code from http://forums.getpaint.net/index.php?/topic/13712-trouble-accessing-the-clipboard/page__view__findpost__p__226140
-            string ret = String.Empty;
+            // Code from http://forums.getpaint.net/index.php?/topic/13712-trouble-accessing-the-clipboard/page__view__findpost__p__226140
+            string ret = string.Empty;
             Thread staThread = new Thread(
                 () =>
                 {
@@ -75,10 +74,10 @@ namespace linerider.UI
             staThread.SetApartmentState(ApartmentState.STA);
             staThread.Start();
             staThread.Join();
-            // at this point either you have clipboard data or an exception
+            // At this point either you have clipboard data or an exception
             return ret;
         }
-        private void SetGameCursor(OpenTK.MouseCursor cursor)
+        private void SetGameCursor(MouseCursor cursor)
         {
             if (game.Cursor != cursor)
             {
@@ -92,30 +91,30 @@ namespace linerider.UI
             {
                 default:
                 case "Default":
-                    SetGameCursor(game.Cursors["default"]);
+                    SetGameCursor(game.Cursors.List[CursorsHandler.Type.Default]);
                     return;
                 case "SizeWE":
-                    SetGameCursor(game.Cursors["size_hor"]);
+                    SetGameCursor(game.Cursors.List[CursorsHandler.Type.SizeWE]);
                     break;
                 case "SizeNWSE":
-                    SetGameCursor(game.Cursors["size_nwse"]);
+                    SetGameCursor(game.Cursors.List[CursorsHandler.Type.SizeNWSE]);
                     break;
                 case "SizeNS":
-                    SetGameCursor(game.Cursors["size_ver"]);
+                    SetGameCursor(game.Cursors.List[CursorsHandler.Type.SizeNS]);
                     break;
                 case "SizeNESW":
-                    SetGameCursor(game.Cursors["size_nesw"]);
+                    SetGameCursor(game.Cursors.List[CursorsHandler.Type.SizeSWNE]);
                     break;
                 case "IBeam":
-                    SetGameCursor(game.Cursors["ibeam"]);
+                    SetGameCursor(game.Cursors.List[CursorsHandler.Type.Beam]);
                     break;
                 case "Hand":
-                    SetGameCursor(game.Cursors["hand_point"]);
+                    SetGameCursor(game.Cursors.List[CursorsHandler.Type.Hand]);
                     break;
                 case "SizeAll":
                 case "Help":
                 case "No":
-                    SetGameCursor(game.Cursors["default"]);
+                    SetGameCursor(game.Cursors.List[CursorsHandler.Type.Default]);
                     break;
             }
         }
