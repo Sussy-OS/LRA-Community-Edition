@@ -8,10 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@v4.1.6
           
       - name: Get next version
-        uses: reecetech/version-increment@2023.10.2
+        uses: reecetech/version-increment@2024.4.4
         id: version
         with:
           scheme: calver
