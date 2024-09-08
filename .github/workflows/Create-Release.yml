@@ -8,10 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4.1.6
+        uses: actions/checkout@v4.1.7
           
       - name: Get next version
-        uses: reecetech/version-increment@2024.4.4
+        uses: reecetech/version-increment@2024.9.2
         id: version
         with:
           scheme: calver
@@ -47,7 +47,7 @@ jobs:
           prerelease: false
           
       - name: Invoke workflow without inputs
-        uses: benc-uk/workflow-dispatch@v1.2.3
+        uses: benc-uk/workflow-dispatch@v1.2.4
         with:
           workflow: Upload Files
           token: ${{ secrets.PERSONAL_TOKEN }}
